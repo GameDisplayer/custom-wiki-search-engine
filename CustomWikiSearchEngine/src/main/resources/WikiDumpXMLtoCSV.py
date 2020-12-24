@@ -32,7 +32,8 @@ def saveInCSV(file, titles, abstracts, contents, topics):
     with open(file, mode='w', encoding="utf-8") as csv_file:
         fieldnames = ['title', 'abstract', 'content', 'topics']
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-    
+        writer.writeheader()
+        
         for i in range(len(titles)):
             writer.writerow({'title' : titles[i], 'abstract' : abstracts[i], 'content' : contents[i], 'topics' : topics[i]})
     print("Done")
