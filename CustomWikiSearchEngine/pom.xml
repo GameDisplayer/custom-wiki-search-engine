@@ -15,6 +15,33 @@
         <lucene.version>8.7.0</lucene.version>
     </properties>
 
+    <build>
+      <sourceDirectory>src/main/java</sourceDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.6.0</version>
+                <executions>
+                    <execution>
+                        <configuration>
+                            <executable>python</executable>
+                            <workingDirectory>src/main/resources/</workingDirectory>
+                            <arguments>
+                                <argument>WikiDumpXMLtoCSV.py</argument>
+                            </arguments>
+                        </configuration>
+                        <id>python_build</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.lucene</groupId>
