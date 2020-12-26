@@ -5,11 +5,17 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -96,6 +102,26 @@ public class Main {
 
     }
 
+    public List<String> search(String field, String searchFor) throws IOException, ParseException {
+        int max_results = 100;
+        System.out.println("Searching for " + searchFor + " at " + field);
+        Directory dir = FSDirectory.open(Paths.get("index_folder"));
+        IndexReader reader = DirectoryReader.open(dir);
+        IndexSearcher searcher = new IndexSearcher(reader);
+        Analyzer analyzer = new StandardAnalyzer();
+
+        QueryParser parser = new QueryParser(field, analyzer);
+        Query query = parser.parse(searchFor);
+
+
+        TopDocs results = searcher.search(query, max_results);
+        ScoreDoc[] hits = results.scoreDocs;
+
+        List<String> l = showResults(hits, searcher);
+        return l;
+
+    }
+
     private static List<String> getTopics(String topics){
         String[] d = topics.split("'");//"'|,|\\[|\\]");
         List<String> listTopics = new ArrayList<>();
@@ -107,18 +133,21 @@ public class Main {
 
     /**
      * Show the best results of a query
-     * @param hits 
+     * @param hits
      * @param searcher
      * @throws IOException
      */
-    private void showResults(ScoreDoc[] hits, IndexSearcher searcher) throws IOException {
+    private List<String> showResults(ScoreDoc[] hits, IndexSearcher searcher) throws IOException {
+        List<String> list = new ArrayList<>();
         for (ScoreDoc scoreDoc : hits) {
             System.out.println("doc="+scoreDoc.doc+" score="+scoreDoc.score);
             Document doc = searcher.doc(scoreDoc.doc);
             System.out.println("\t" + doc.get("title"));
 
+            list.add(doc.get("title"));
         }
 
+        return list;
     }
 
 
@@ -127,7 +156,11 @@ public class Main {
         Main main = new Main();
         List<List<String>> documents = main.parseCsv("WikiData.csv");
 
-        main.createIndex(documents);
+        //main.createIndex(documents);
+
+        String field="content";
+        String searchFor="history";
+        main.search(field, searchFor);
 
     }
 
