@@ -13,6 +13,7 @@
         <maven.compiler.target>8</maven.compiler.target>
 
         <lucene.version>8.7.0</lucene.version>
+        <opencsv.version>5.3</opencsv.version>
     </properties>
 
     <build>
@@ -57,6 +58,12 @@
             <groupId>org.apache.lucene</groupId>
             <artifactId>lucene-queryparser</artifactId>
             <version>${lucene.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>${opencsv.version}</version>
         </dependency>
     </dependencies>
 
