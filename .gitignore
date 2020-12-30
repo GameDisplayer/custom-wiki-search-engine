@@ -25,5 +25,8 @@ hs_err_pid*
 #intellij
 .idea
 *.iml
+CustomWikiSearchEngine/.idea/
+CustomWikiSearchEngine/*.iml
 
 CustomWikiSearchEngine/target/
+CustomWikiSearchEngine/index_folder/

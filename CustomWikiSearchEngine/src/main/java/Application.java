@@ -11,7 +11,7 @@ import java.util.List;
 
 public class Application extends JFrame {
     private JPanel container = new JPanel();
-    private JTextField jtf = new JTextField("Seach the Wiki world");
+    private JTextField jtf = new JTextField("Search the Wiki world");
     private JButton jb = new JButton("GO");
     JList list = new JList();
     JScrollPane scrollableList = new JScrollPane(list);

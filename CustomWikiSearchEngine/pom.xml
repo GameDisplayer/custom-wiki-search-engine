@@ -24,6 +24,14 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <executions>
+                    <!--<execution>
+                        <configuration>
+                            <mainClass>src/main/java/Main</mainClass>
+                        </configuration>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                    </execution>-->
                     <execution>
                         <configuration>
                             <executable>python</executable>

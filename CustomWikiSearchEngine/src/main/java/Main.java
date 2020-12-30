@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.nio.file.Files.notExists;
+
 
 public class Main {
 
@@ -156,7 +158,9 @@ public class Main {
         Main main = new Main();
         List<List<String>> documents = main.parseCsv("WikiData.csv");
 
-        //main.createIndex(documents);
+        if(notExists(Paths.get("index_folder"))) {
+            main.createIndex(documents);
+        }
 
         String field="content";
         String searchFor="history";
