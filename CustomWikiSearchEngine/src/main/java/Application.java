@@ -3,8 +3,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +31,17 @@ public class Application extends JFrame {
         jtf.setPreferredSize(new Dimension(650, 30));
         jtf.setForeground(Color.GRAY);
         top.add(jtf);
+        jtf.addKeyListener(new JtextFileEnterListener());
+        jtf.addMouseListener(new MouseAdapter(){
+            int numClick = 0;
+            @Override
+            public void mouseClicked(MouseEvent e){
+                numClick += 1;
+                if(numClick == 1) {
+                    jtf.setText("");
+                }
+            }
+        });
 
         jb.addActionListener(new ButtonListener());
         top.add(jb);
@@ -60,6 +70,32 @@ public class Application extends JFrame {
             }
         }
     }
+
+    class JtextFileEnterListener implements KeyListener {
+        @Override
+        public void keyTyped(KeyEvent e) {
+
+        }
+
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if(e.getKeyCode() == KeyEvent.VK_ENTER){
+                Main main = new Main();
+                try {
+                    List<String> l = main.search("content", jtf.getText());
+                    list.setListData(l.toArray());
+                } catch (IOException | ParseException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        }
+
+        @Override
+        public void keyReleased(KeyEvent e) {
+
+        }
+    }
+
 
     public static void main(String[] args) {
         Application app = new Application();
