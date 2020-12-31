@@ -12,12 +12,14 @@ public class Application extends JFrame {
     private JPanel container = new JPanel();
     private JTextField jtf = new JTextField("Search the Wiki world");
     private JButton jb = new JButton("GO");
+    private Object[] fields = new Object[]{"title", "abstract", "content"};
+    private JComboBox field = new JComboBox(fields);
     JList list = new JList();
     JScrollPane scrollableList = new JScrollPane(list);
 
     public Application() {
         this.setTitle("Wiki Search");
-        this.setSize(750, 600);
+        this.setSize(750, 620);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         container.setBackground(Color.white);
@@ -25,6 +27,8 @@ public class Application extends JFrame {
 
         JPanel top = new JPanel();
         JPanel med = new JPanel();
+        JPanel filters = new JPanel();
+        JPanel choosable = new JPanel();
 
         Font police = new Font("Arial", Font.BOLD, 14);
         jtf.setFont(police);
@@ -51,8 +55,22 @@ public class Application extends JFrame {
         scrollableList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         med.add(scrollableList);
 
+        JLabel filter = new JLabel("Filters :", JLabel.CENTER);
+        filter.setFont(police);
+        filters.add(filter);
+
+        JLabel content = new JLabel("Field :", JLabel.LEFT);
+        content.setFont(new Font("Arial", Font.ITALIC, 14));
+        field.setPreferredSize(new Dimension(70, 20));
+        field.setSelectedIndex(2);
+        choosable.add(content);
+        choosable.add(field);
+
         container.add(top, BorderLayout.NORTH);
-        container.add(med, BorderLayout.CENTER);
+        container.add(med, BorderLayout.SOUTH);
+        container.add(filters, BorderLayout.WEST);
+        container.add(choosable, BorderLayout.CENTER);
+
 
         this.setContentPane(container);
         this.setVisible(true);
@@ -62,8 +80,9 @@ public class Application extends JFrame {
     class ButtonListener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             Main main = new Main();
+            String selectedField = field.getSelectedItem().toString();
             try {
-                List<String> l = main.search("content", jtf.getText());
+                List<String> l = main.search(selectedField, jtf.getText());
                 list.setListData(l.toArray());
             } catch (IOException | ParseException ioException) {
                 ioException.printStackTrace();
@@ -81,8 +100,9 @@ public class Application extends JFrame {
         public void keyPressed(KeyEvent e) {
             if(e.getKeyCode() == KeyEvent.VK_ENTER){
                 Main main = new Main();
+                String selectedField = field.getSelectedItem().toString();
                 try {
-                    List<String> l = main.search("content", jtf.getText());
+                    List<String> l = main.search(selectedField, jtf.getText());
                     list.setListData(l.toArray());
                 } catch (IOException | ParseException ioException) {
                     ioException.printStackTrace();

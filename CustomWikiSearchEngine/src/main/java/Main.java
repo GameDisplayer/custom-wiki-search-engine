@@ -35,6 +35,21 @@ import static java.nio.file.Files.notExists;
 
 
 public class Main {
+    /**
+     * Constructor of the main class
+     */
+    public Main(){
+        //Indexation of documents
+        try {
+            if (notExists(Paths.get("index_folder"))) {
+                List<List<String>> documents = this.parseCsv("WikiData.csv");
+                this.createIndex(documents);
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        //MAYBE ADD TOPIC MODELLING ALSO HERE?
+    }
 
     /**
      * Parse CSV file in order to get row by row values
@@ -109,8 +124,8 @@ public class Main {
     private Document getDocument(List<String> value) {
 
         Document lucene_doc = new Document();
-        lucene_doc.add(new StringField("title", value.get(0), Field.Store.YES));
-        lucene_doc.add(new StringField("abstract", value.get(1), Field.Store.YES));
+        lucene_doc.add(new TextField("title", value.get(0), Field.Store.YES));
+        lucene_doc.add(new TextField("abstract", value.get(1), Field.Store.YES));
         lucene_doc.add(new TextField("content", value.get(2), Field.Store.YES));
         List<String> listTopics = getTopics(value.get(3));
         for (String topic : listTopics) {
@@ -142,10 +157,8 @@ public class Main {
         QueryParser parser = new QueryParser(field, analyzer);
         Query query = parser.parse(searchFor);
 
-
         TopDocs results = searcher.search(query, max_results);
         ScoreDoc[] hits = results.scoreDocs;
-
         List<String> l = showResults(hits, searcher);
         return l;
 
@@ -269,10 +282,10 @@ public class Main {
 
         /* NOTE : HEGEL ~300 in CSV text -> topics !! */
         /* We parse the cvs file and we create indexes */
-        if(notExists(Paths.get("index_folder"))) {
+        /*if(notExists(Paths.get("index_folder"))) {
             List<List<String>> documents = main.parseCsv("WikiData.csv");
             main.createIndex(documents);
-        }
+        }*/
         /* topic Modeling */
         topicModeling();
 
