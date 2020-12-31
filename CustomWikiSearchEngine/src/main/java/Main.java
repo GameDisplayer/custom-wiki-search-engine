@@ -12,6 +12,7 @@ import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.*;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
@@ -99,9 +100,9 @@ public class Main {
 
     /**
      * Add documents based on the parsed CSV
-     * @param data
-     * @param writer
-     * @throws Exception
+     * @param data all the documents to add
+     * @param writer the IndexWriter
+     * @throws Exception of the IndexWriter
      */
     private void addDocuments(List<List<String>> data, IndexWriter writer) throws Exception {
         int documentsAdded = 0;
@@ -118,8 +119,8 @@ public class Main {
 
     /**
      * Method to index a single document
-     * @param value
-     * @return
+     * @param value the value of the document
+     * @return Document : the document added
      */
     private Document getDocument(List<String> value) {
 
@@ -140,9 +141,9 @@ public class Main {
 
     /**
      * Basic search method
-     * @param field
-     * @param searchFor
-     * @return
+     * @param field the field in which we want to search
+     * @param searchFor the query
+     * @return List<String> : the answer to the querry
      * @throws IOException
      * @throws ParseException
      */
@@ -162,6 +163,29 @@ public class Main {
         List<String> l = showResults(hits, searcher);
         return l;
 
+    }
+
+    /**
+     * Basic search in multiple fields
+     * @param fields the list of field in which we want to search
+     * @param searchFor the list of querry (one by fields)
+     * @return List<String> the answer of the querry
+     * @throws IOException
+     * @throws ParseException
+     */
+    private List<String> searchMultipleField(String[] fields, String[] searchFor) throws IOException, ParseException {
+        int max_results = 2;
+        Directory dir = FSDirectory.open(Paths.get("index_folder" ));
+        IndexReader reader = DirectoryReader.open(dir);
+        IndexSearcher searcher = new IndexSearcher(reader);
+        Analyzer analyzer = new StandardAnalyzer();
+
+        Query matchQuery = MultiFieldQueryParser.parse(searchFor, fields, analyzer);
+
+        TopDocs results = searcher.search(matchQuery, max_results);
+        ScoreDoc[] hits = results.scoreDocs;
+
+        return showResults(hits, searcher);
     }
 
     /**
