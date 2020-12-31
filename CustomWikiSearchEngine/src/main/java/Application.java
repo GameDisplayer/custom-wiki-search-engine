@@ -1,14 +1,9 @@
-import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
-import org.omg.CORBA.BAD_INV_ORDER;
-import org.w3c.dom.ls.LSOutput;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.EventListener;
 import java.util.List;
 
 /**
@@ -23,6 +18,8 @@ public class Application extends JFrame {
     private JComboBox field1 = new JComboBox(fields);
     private JComboBox field2 = new JComboBox(fields);
     private JLabel content2 = new JLabel("and", JLabel.LEFT);
+    ImageIcon helpIcon = createImageIcon("Icon/help.png", "help");
+    JButton helpButton = new JButton(helpIcon);
     JList list = new JList();
     JScrollPane scrollableList = new JScrollPane(list);
 
@@ -112,10 +109,9 @@ public class Application extends JFrame {
         //CheckBox for multipel fields :
         numFields.setAlignmentX(Component.CENTER_ALIGNMENT);
         numFields.addItemListener(new MultiFieldsListener());
-        numFields.addActionListener(new PopUpInformation(this));
-        //helpButton.setPreferredSize(new Dimension(32,32));
-        ImageIcon helpIcon = createImageIcon("resources/Icon/help.png", "help");
-        JButton helpButton = new JButton(helpIcon);
+        numFields.addActionListener(new numberOfFields(this));
+        helpButton.setPreferredSize(new Dimension(20,20));
+        helpButton.addActionListener(new PopUpInformation(this));
         multFields.add(helpButton);
         multFields.add(numFields);
 
@@ -210,7 +206,47 @@ public class Application extends JFrame {
     }
 
     /**
-     * ActionListener for the checkButton
+     * Action Listener for the check box
+     */
+    public class numberOfFields implements ActionListener{
+        private JFrame current;
+
+        /**
+         * Constructor for the Action Listener
+         * @param frame the current frame
+         */
+        public numberOfFields(JFrame frame){
+            current = frame;
+        }
+
+        /**
+         * Method to allows the choose of the number of fields wanted
+         * @param e
+         */
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if(numFields.isSelected()){
+                int num;
+                Object[] possibilities = {2, 3};
+                Object numOb = JOptionPane.showInputDialog(current,
+                      "Select the number of fields wanted :",
+                      "Number of fields",
+                      JOptionPane.PLAIN_MESSAGE, helpIcon,
+                      possibilities, 2);
+
+                if(numOb != null){
+                    num = (int)numOb;
+                    System.out.println("YO");
+                }else{
+                    numFields.setSelected(false);
+                }
+
+            }
+        }
+    }
+
+    /**
+     * ActionListener for the help button
      */
     public class PopUpInformation implements ActionListener{
         private JFrame current;
@@ -229,12 +265,14 @@ public class Application extends JFrame {
          */
         @Override
         public void actionPerformed(ActionEvent e) {
-            if(numFields.isSelected()){
-                JOptionPane.showMessageDialog(current,
-                      "Eggs are not supposed to be green.",
-                      "Information",
-                      JOptionPane.PLAIN_MESSAGE);
-            }
+            JOptionPane.showMessageDialog(current,
+                  "This button allows you to make a \"multiple fields\" search." +
+                        "\nFor use :\n\t1. Click the button\n\t2. On the opened window, choose the number of fields wanted" +
+                        "\n\t3. Select your fields in the scrollable lists which is appearing" +
+                        "\n\t4. Write your query : 1 query by field, in the same order than the fields, separated by \";\"" +
+                  "\nWARNING! If you write less query than the number of fields, the last query will be used for the remaining fields!",
+                  "Multi-fields query user manual",
+                  JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
