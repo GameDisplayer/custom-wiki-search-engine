@@ -1,16 +1,14 @@
 import com.opencsv.CSVReader;
-import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.CoreDocument;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.simple.Sentence;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.*;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
@@ -21,8 +19,6 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.QueryBuilder;
-import org.tartarus.snowball.ext.PorterStemmer;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -30,7 +26,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 
 import static java.nio.file.Files.notExists;
 
@@ -222,96 +217,16 @@ public class Main {
     }
 
 
-    private static void topicModeling() throws IOException {
-
-        /* Counters to test */
-        int history = 0;
-        int science = 0;
-        int religion = 0;
-        int rest = 0;
-        ArrayList<String> historyWordList = new ArrayList<>();
-
-        /* Stanford NLP core to lemmatize the topics */
-        Properties props = new Properties();
-        // set the list of annotators to run
-        props.setProperty("annotators", "tokenize,ssplit,pos,lemma");
-        // build pipeline
-        StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-
-        /* Read the document indexed */
-        Directory dir = FSDirectory.open(Paths.get("index_folder"));
-        IndexReader reader = DirectoryReader.open(dir);
-        //for all the document indexed
-        for (int i = 0; i < reader.maxDoc(); i++) {
-            Document doc = reader.document(i);
-            String[] topics = doc.getValues("topics");
-            String abstr = doc.getField("abstract").getCharSequenceValue().toString();
-
-            int index = 0;
-            //for all the topics of a document
-            //System.out.println("TOPS OF DOC");
-            for (String topic : topics) {
-                //System.out.println(topic);
-
-                // create a document object for nlp
-                CoreDocument document = pipeline.processToCoreDocument(topic);
-                //System.out.println("TOPIC" + i);
-                for (CoreLabel tok : document.tokens()) {
-                    PorterStemmer stem = new PorterStemmer();
-                    stem.setCurrent(tok.lemma().toLowerCase());
-                    stem.stem();
-                    String result = stem.getCurrent();
-                    switch (result) {
-                        case "histor":
-                        case "histori":
-//                            CoreDocument a = pipeline.processToCoreDocument(abstr);
-//                            for (CoreLabel tik : a.tokens()) {
-//                                historyWordList.add(tik.lemma());
-//                            }
-                            history++;
-                            index++;
-                        case "scienc":
-                        case "biotechnologi":
-                        case "biologi":
-                        case "biolog":
-                        case "astronomi":
-                        case "chemistri":
-                            science++;
-                            index++;
-                        case "religion":
-                        case "religi":
-                        case "belief":
-                            religion++;
-                            index++;
-                        default:
-                            break;
-                    }
-                }
-            }
-            //if no stems have been detected -> rest
-            if (index == 0) {
-                rest++;
-                //for(String topic : topics){ System.out.println(topic);}
-            }
-
-        }
-        System.out.println("History : " + history + "; Science : " + science + "; Religion : " + religion + "; Rest : " + rest);
-
-        //System.out.println(historyWordList.get(0));
-    }
 
     public static void main(String[] args) throws Exception {
         Main main = new Main();
 
 
-        /* NOTE : HEGEL ~300 in CSV text -> topics !! */
         /* We parse the cvs file and we create indexes */
-        /*if(notExists(Paths.get("index_folder"))) {
+        if(notExists(Paths.get("index_folder"))) {
             List<List<String>> documents = main.parseCsv("WikiData.csv");
             main.createIndex(documents);
-        }*/
-        /* topic Modeling */
-        topicModeling();
+        }
 
         /* Test stemmming
         PorterStemmer stem = new PorterStemmer();
