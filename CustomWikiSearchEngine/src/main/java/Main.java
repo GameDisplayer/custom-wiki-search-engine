@@ -168,7 +168,7 @@ public class Main {
      * @throws IOException
      * @throws ParseException
      */
-    private List<String> searchMultipleField(String[] fields, String[] searchFor) throws IOException, ParseException {
+    public List<String> searchMultipleFields(String[] fields, String[] searchFor) throws IOException, ParseException {
         int max_results = 2;
         Directory dir = FSDirectory.open(Paths.get("index_folder" ));
         IndexReader reader = DirectoryReader.open(dir);
