@@ -8,7 +8,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.tartarus.snowball.ext.PorterStemmer;
 
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -16,13 +15,33 @@ import java.util.*;
 
 public class TopicModeling {
 
+    List<List<Document>> docsPerTopic;
+    List<Document> docsHistory, docsScience, docsReligion;
+    HashMap<String, Integer> hmHist, hmScienc, hmRel;
+
+    public TopicModeling() throws IOException {
+        docsPerTopic = topicExtraction();
+
+        docsHistory = docsPerTopic.get(0);
+        docsScience = docsPerTopic.get(1);
+        docsReligion = docsPerTopic.get(2);
+
+        hmHist = sortByValue(topicModeling(docsHistory));
+        hmScienc = sortByValue(topicModeling(docsScience));
+        hmRel = sortByValue(topicModeling(docsReligion));
+
+
+    }
+
 
     /**
      * Method to extract documents per topic ie History, Science & Religion/Belief
-     * @return
-     * @throws IOException
+     * @return List<List<Document>> documents per topics
+     * @throws IOException for index directory
      */
-    private static List<List<Document>> topicExtraction() throws IOException {
+    public static List<List<Document>> topicExtraction() throws IOException {
+
+        List<List<Document>> docsPerTopic = new ArrayList<>();
 
         /* Counters to test */
         int history = 0;
@@ -35,7 +54,6 @@ public class TopicModeling {
         List<Document> historyDocList = new ArrayList<>();
         List<Document> scienceDocList = new ArrayList<>();
         List<Document> religionDocList = new ArrayList<>();
-        List<List<Document>> docsPerTopic = new ArrayList<>();
 
         /* Stanford NLP core to lemmatize the topics */
         Properties props = new Properties();
@@ -112,13 +130,13 @@ public class TopicModeling {
 
     /**
      * Method to tokenize and stop word removal the abstract for topic modeling
-     * @param docsPerTopic
-     * @return
+     * @param docsPerTopic documents per topic
+     * @return HashMap<String, Integer> occurences of words in documents per topic
      */
     private static HashMap<String, Integer> topicModeling(List<Document> docsPerTopic) throws IOException {
 
-        HashMap<String, Integer> myWordsCount = new HashMap<String, Integer>();
-        HashMap<String, Double> myWordsFreqByDoc = new HashMap<String, Double>();
+        HashMap<String, Integer> myWordsCount = new HashMap<>();
+        HashMap<String, Double> myWordsFreqByDoc = new HashMap<>();
 
 
         List<String> stopwords = Files.readAllLines(Paths.get("src/main/resources/english_stopwords.txt"));
@@ -132,7 +150,7 @@ public class TopicModeling {
             CoreDocument document = pipeline.processToCoreDocument(abst);
 
             int totalWords = 0;
-            String[] words = new String[0];
+            String[] words;
             for (CoreLabel tok : document.tokens()) {
 
                 words = tok.word().replaceAll("[^a-zA-Z ]", "").toLowerCase().split("\\s+");
@@ -164,54 +182,20 @@ public class TopicModeling {
 
     /**
      * Function to sort hashmap by values
-     * @param hm
-     * @return
-     */
-    private static HashMap<String, Double> sortByValueD(HashMap<String, Double> hm)
-    {
-        // Create a list from elements of HashMap
-        List<Map.Entry<String, Double> > list =
-                new LinkedList<Map.Entry<String, Double> >(hm.entrySet());
-
-        // Sort the list
-        Collections.sort(list, new Comparator<Map.Entry<String, Double> >() {
-            public int compare(Map.Entry<String, Double> o1,
-                               Map.Entry<String, Double> o2)
-            {
-                return (o1.getValue()).compareTo(o2.getValue());
-            }
-        });
-
-        // put data from sorted list to hashmap
-        HashMap<String, Double> temp = new LinkedHashMap<String, Double>();
-        for (Map.Entry<String, Double> aa : list) {
-            temp.put(aa.getKey(), aa.getValue());
-        }
-        return temp;
-    }
-
-    /**
-     * Function to sort hashmap by values
-     * @param hm
-     * @return
+     * @param hm HashMap<String, Integer> not yet sorted
+     * @return HashMap<String, Integer> sorted by Integer (ascending order)
      */
     private static HashMap<String, Integer> sortByValue(HashMap<String, Integer> hm)
     {
         // Create a list from elements of HashMap
         List<Map.Entry<String, Integer> > list =
-                new LinkedList<Map.Entry<String, Integer> >(hm.entrySet());
+                new LinkedList<>(hm.entrySet());
 
         // Sort the list
-        Collections.sort(list, new Comparator<Map.Entry<String, Integer> >() {
-            public int compare(Map.Entry<String, Integer> o1,
-                               Map.Entry<String, Integer> o2)
-            {
-                return (o1.getValue()).compareTo(o2.getValue());
-            }
-        });
+        list.sort(Map.Entry.comparingByValue());
 
         // put data from sorted list to hashmap
-        HashMap<String, Integer> temp = new LinkedHashMap<String, Integer>();
+        HashMap<String, Integer> temp = new LinkedHashMap<>();
         for (Map.Entry<String, Integer> aa : list) {
             temp.put(aa.getKey(), aa.getValue());
         }
@@ -219,25 +203,13 @@ public class TopicModeling {
     }
 
 
-    private static void displayTopWords(HashMap<String, Integer> hm, int top) {
+    public static void displayTopWords(HashMap<String, Integer> hm, int top) {
 
         HashMap<String, Integer> hmOrd = sortByValue(hm);
         int count = 0;
         for (Map.Entry<String, Integer> en : hmOrd.entrySet()) {
             int decount = hm.size() - count;
-            if(decount <= 10 ) System.out.println(decount + " -> Key = " + en.getKey() + ", Value = " + en.getValue());
-            count++;
-        }
-
-    }
-
-    private static void displayTopWordsD(HashMap<String, Double> hm, int top) {
-
-        HashMap<String, Double> hmOrd = sortByValueD(hm);
-        int count = 0;
-        for (Map.Entry<String, Double> en : hmOrd.entrySet()) {
-            int decount = hm.size() - count;
-            if(decount <= 10 ) System.out.println(decount + " -> Key = " + en.getKey() + ", Value = " + en.getValue());
+            if(decount <= top ) System.out.println(decount + " -> Key = " + en.getKey() + ", Value = " + en.getValue());
             count++;
         }
 
