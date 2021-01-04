@@ -10,19 +10,17 @@ import java.util.List;
  * Class used to create an user interface
  */
 public class Application extends JFrame {
-    private Main main = new Main();
-    private JPanel container = new JPanel();
-    private JTextField jtf = new JTextField("Search the Wiki world");
-    private JButton jb = new JButton("GO");
-    private JCheckBox numFields = new JCheckBox("Multiple field", false);
+    private final Main main = new Main();
+    private final JTextField jtf = new JTextField("Search the Wiki world");
+    private final JCheckBox numFields = new JCheckBox("Multiple field", false);
     private int numF = 1;
-    private Object[] fields = new Object[]{"title", "abstract", "content"};
-    private JComboBox field1 = new JComboBox(fields);
-    private JComboBox field2 = new JComboBox(fields);
-    private JComboBox field3 = new JComboBox(fields);
+    private final Object[] fields = new Object[]{"title", "abstract", "content"};
+    private final JComboBox field1 = new JComboBox(fields);
+    private final JComboBox field2 = new JComboBox(fields);
+    private final JComboBox field3 = new JComboBox(fields);
     //These two JLabels are defined here because we need to access it, in order to make them visibles.
-    private JLabel content2 = new JLabel(";", JLabel.LEFT);
-    private JLabel content3 = new JLabel(";", JLabel.LEFT);
+    private final JLabel content2 = new JLabel(";", JLabel.LEFT);
+    private final JLabel content3 = new JLabel(";", JLabel.LEFT);
     ImageIcon helpIcon = createImageIcon("Icon/help.png", "help");
     JButton helpButton = new JButton(helpIcon);
     JList list = new JList();
@@ -34,8 +32,10 @@ public class Application extends JFrame {
     public Application() {
         this.setTitle("Wiki Search");
         this.setSize(750, 650);
+        this.setResizable(false);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
+        JPanel container = new JPanel();
         container.setBackground(Color.white);
         container.setLayout(new BorderLayout());
 
@@ -73,6 +73,7 @@ public class Application extends JFrame {
         });
 
         //Go button :
+        JButton jb = new JButton("GO");
         jb.addActionListener(new ButtonListener(this));
         top.add(jb);
 
@@ -205,7 +206,7 @@ public class Application extends JFrame {
                     selected1 = field1.getSelectedItem().toString();
                     selected2 = field2.getSelectedItem().toString();
                     String selected3 = field3.getSelectedItem().toString();
-                    if((selected1 != selected2) && (selected2 != selected3) && (selected1 != selected3)){
+                    if((!selected1.equals(selected2)) && (!selected2.equals(selected3)) && (!selected1.equals(selected3))){
                         String[] fields = new String[]{selected1, selected2, selected3};
                         String queries = jtf.getText();
                         String[] split = queries.split(";");       //NEED TO CLEAN QUERRY
@@ -249,7 +250,7 @@ public class Application extends JFrame {
      * Listener for the search bar
      */
     class JtextFileEnterListener implements KeyListener {
-        private JFrame current;
+        private final JFrame current;
 
         /**
          * Constructor for the enter listener
@@ -302,7 +303,7 @@ public class Application extends JFrame {
                         selected1 = field1.getSelectedItem().toString();
                         selected2 = field2.getSelectedItem().toString();
                         String selected3 = field3.getSelectedItem().toString();
-                        if((selected1 != selected2) && (selected2 != selected3) && (selected1 != selected3)){
+                        if((!selected1.equals(selected2)) && (!selected2.equals(selected3)) && (!selected1.equals(selected3))){
                             String[] fields = new String[]{selected1, selected2, selected3};
                             String queries = jtf.getText();
                             String[] split = queries.split(";");
@@ -370,7 +371,7 @@ public class Application extends JFrame {
      * Action Listener for the check box
      */
     public class numberOfFields implements ActionListener{
-        private JFrame current;
+        private final JFrame current;
 
         /**
          * Constructor for the Action Listener
@@ -415,8 +416,8 @@ public class Application extends JFrame {
     /**
      * ActionListener for the help button
      */
-    public class PopUpInformation implements ActionListener{
-        private JFrame current;
+    public static class PopUpInformation implements ActionListener{
+        private final JFrame current;
 
         /**
          * Constructor for the ActionListener
