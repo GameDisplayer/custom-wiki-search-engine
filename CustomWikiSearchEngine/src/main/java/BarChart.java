@@ -43,7 +43,7 @@ public class BarChart extends ApplicationFrame {
         final String science = "Sciences";
         final String religion = "Religion & Belief";
 
-        TopicModeling tp = new TopicModeling();
+        TopicModeling tp = new TopicModeling("abtsract");
 
         final DefaultCategoryDataset dataset =
                 new DefaultCategoryDataset( );

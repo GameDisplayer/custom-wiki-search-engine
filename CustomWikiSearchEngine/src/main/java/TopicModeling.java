@@ -19,16 +19,16 @@ public class TopicModeling {
     List<Document> docsHistory, docsScience, docsReligion;
     HashMap<String, Integer> hmHist, hmScienc, hmRel;
 
-    public TopicModeling() throws IOException {
+    public TopicModeling(String field) throws IOException {
         docsPerTopic = topicExtraction();
 
         docsHistory = docsPerTopic.get(0);
         docsScience = docsPerTopic.get(1);
         docsReligion = docsPerTopic.get(2);
 
-        hmHist = sortByValue(topicModeling(docsHistory));
-        hmScienc = sortByValue(topicModeling(docsScience));
-        hmRel = sortByValue(topicModeling(docsReligion));
+        hmHist = sortByValue(topicModeling(field, docsHistory));
+        hmScienc = sortByValue(topicModeling(field, docsScience));
+        hmRel = sortByValue(topicModeling(field, docsReligion));
 
 
     }
@@ -133,23 +133,20 @@ public class TopicModeling {
      * @param docsPerTopic documents per topic
      * @return HashMap<String, Integer> occurences of words in documents per topic
      */
-    private static HashMap<String, Integer> topicModeling(List<Document> docsPerTopic) throws IOException {
+    private static HashMap<String, Integer> topicModeling(String field, List<Document> docsPerTopic) throws IOException {
 
         HashMap<String, Integer> myWordsCount = new HashMap<>();
-        HashMap<String, Double> myWordsFreqByDoc = new HashMap<>();
-
 
         List<String> stopwords = Files.readAllLines(Paths.get("src/main/resources/english_stopwords.txt"));
 
         for(Document doc : docsPerTopic) {
-            String abst = doc.getField("abstract").toString();
+            String f = doc.getField(field).toString();
 
             Properties props = new Properties();
             props.setProperty("annotators", "tokenize");
             StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-            CoreDocument document = pipeline.processToCoreDocument(abst);
+            CoreDocument document = pipeline.processToCoreDocument(f);
 
-            int totalWords = 0;
             String[] words;
             for (CoreLabel tok : document.tokens()) {
 
@@ -157,27 +154,17 @@ public class TopicModeling {
                 for (String word : words) {
                     //si mot non vide ou stopword ou mots < 2 length
                     if (!word.isEmpty() && !stopwords.contains(word) && word.length() > 2) {
-                        totalWords++;
                         if (myWordsCount.containsKey(word)) {
                             myWordsCount.replace(word, myWordsCount.get(word) + 1);
-                            myWordsFreqByDoc.replace(word, myWordsFreqByDoc.get(word) + 1);
                         } else {
                             myWordsCount.put(word, 1);
-                            myWordsFreqByDoc.put(word, 1.0);
                         }
                     }
                 }
                 //for (String word : words) if (!word.isEmpty() ) System.out.println(String.format("%s", word));
-                for (String word : words) {
-                    if (!word.isEmpty() && !stopwords.contains(word) && word.length() > 2)  myWordsFreqByDoc.replace(word,  myWordsFreqByDoc.get(word) + (myWordsFreqByDoc.get(word) / totalWords));
-                }
             }
-
-
-
         }
         return myWordsCount;
-        //return myWordsFreqByDoc;
     }
 
     /**
@@ -209,30 +196,79 @@ public class TopicModeling {
         int count = 0;
         for (Map.Entry<String, Integer> en : hmOrd.entrySet()) {
             int decount = hm.size() - count;
-            if(decount <= top ) System.out.println(decount + " -> Key = " + en.getKey() + ", Value = " + en.getValue());
+            if(decount <= top ) System.out.println(decount + " -> Key = " + en.getKey() + ", Occurences = " + en.getValue());
             count++;
         }
 
+    }
+
+    /**
+     * Inverse document frequency
+     * @param term to calculate
+     * @param field to explore
+     * @param docsTopic as a subset of the dump
+     * @return idf log(N/n) smoothed (+1)
+     * @throws IOException when reading docs or stopwords
+     */
+    public static double idf(String term, String field, List<Document> docsTopic) throws IOException {
+        int N = docsTopic.size() + 1;
+        int n = 1;
+
+        List<String> stopwords = Files.readAllLines(Paths.get("src/main/resources/english_stopwords.txt"));
+
+        for(Document doc : docsTopic) {
+            String f = doc.getField(field).toString();
+
+            Properties props = new Properties();
+            props.setProperty("annotators", "tokenize");
+            StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+            CoreDocument document = pipeline.processToCoreDocument(f);
+
+            boolean here= false;
+            String[] words;
+            for (CoreLabel tok : document.tokens()) {
+
+                words = tok.word().replaceAll("[^a-zA-Z ]", "").toLowerCase().split("\\s+");
+                for (String word : words) {
+                    //si mot non vide ou stopword ou mots < 2 length
+                    if (word.equals(term)) {
+                        here = true;
+                    }
+                }
+            }
+            if(here) n=n+1;
+        }
+        System.out.println("Term :" + term + " N : " + N + " n : " + n);
+        return Math.log10(N/n);
+    }
+
+    /**
+     * tfid function
+     * @param idf calculated
+     * @param tf calculated
+     * @return tfidf value
+     */
+    public double tfidf(double idf, double tf) {
+        return tf * idf;
     }
 
     public static void main(String[] args) throws IOException {
 
         /* topic Modeling */
         List<List<Document>> docsPerTopic = topicExtraction();
+
+        String field = "abstract";
         /* History */
         List<Document> docsHistory = docsPerTopic.get(0);
-        //HashMap<String, Double> hmHist = topicModeling(docsHistory);
-        HashMap<String, Integer> hmHist = topicModeling(docsHistory);
+        HashMap<String, Integer> hmHist = topicModeling(field, docsHistory);
 
         /* Sciences */
         List<Document> docsScience = docsPerTopic.get(1);
-        //HashMap<String, Double> hmScienc = topicModeling(docsScience);
-        HashMap<String, Integer> hmScienc = topicModeling(docsScience);
+        HashMap<String, Integer> hmScienc = topicModeling(field, docsScience);
 
         /* Religion & belief */
         List<Document> docsReligion = docsPerTopic.get(2);
-        //HashMap<String, Double> hmRel = topicModeling(docsReligion);
-        HashMap<String, Integer> hmRel = topicModeling(docsReligion);
+        HashMap<String, Integer> hmRel = topicModeling(field, docsReligion);
 
 
         System.out.println("\nTop words of History :");
@@ -241,5 +277,10 @@ public class TopicModeling {
         displayTopWords(hmScienc, 10);
         System.out.println("\nTop words of Religion&Belief :");
         displayTopWords(hmRel, 10);
+
+
+        System.out.println(idf("history", "abstract", docsHistory));
+
+
     }
 }
