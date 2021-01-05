@@ -3,6 +3,7 @@ import org.apache.lucene.queryparser.classic.ParseException;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
@@ -28,10 +29,13 @@ public class Application extends JFrame {
     JButton helpButton = new JButton(helpIcon);
     ImageIcon returnIcon = createImageIcon("Icon/back.png", "back");
     JButton returnButton = new JButton(returnIcon);
+    ImageIcon contentIcon = createImageIcon("Icon/content.png", "content");
+    JButton contentButton = new JButton(contentIcon);
     JList list = new JList();
     JScrollPane scrollableList = new JScrollPane(list);
     private List<List<String>> actualResult = new ArrayList<>();
     private int selectedResult = 0;
+    boolean seeingText = false;
 
     /**
      * Constructor for the application
@@ -47,6 +51,8 @@ public class Application extends JFrame {
         container.setLayout(new BorderLayout());
 
         JPanel top = new JPanel();
+        JPanel sidesButton = new JPanel();
+        sidesButton.setLayout(new BoxLayout(sidesButton, BoxLayout.Y_AXIS));
         JPanel med = new JPanel();
         med.setLayout(new BoxLayout(med, BoxLayout.X_AXIS));
         //Panel just for the string "Filters:"
@@ -102,8 +108,19 @@ public class Application extends JFrame {
         returnButton.setContentAreaFilled(false);
         returnButton.setBorderPainted(false);
         returnButton.setEnabled(false);
-        returnButton.setAlignmentY(Component.TOP_ALIGNMENT);
-        med.add(returnButton);
+        sidesButton.add(returnButton);
+        contentButton.setPreferredSize(new Dimension(32,32));
+        contentButton.setMaximumSize(new Dimension(32,32));
+        contentButton.addActionListener(new ContentListener(this));
+        contentButton.setIcon(null);
+        contentButton.setOpaque(false);
+        contentButton.setContentAreaFilled(false);
+        contentButton.setBorderPainted(false);
+        contentButton.setEnabled(false);
+        contentButton.setAlignmentY(Component.TOP_ALIGNMENT);
+        sidesButton.add(contentButton);
+        sidesButton.setAlignmentY(Component.TOP_ALIGNMENT);
+        med.add(sidesButton);
         med.add(scrollableList);
 
         //String "Filters:" :
@@ -515,7 +532,7 @@ public class Application extends JFrame {
             }else{
                 index = firstIndex;
             }
-            JTextArea wanted = new JTextArea(); //680,480
+            JTextArea wanted = new JTextArea();
             wanted.setText(currentApplication.actualResult.get(1).get(index));
             wanted.setEditable(false);
             wanted.setFont(new Font("Arial", Font.BOLD, 14));
@@ -528,6 +545,11 @@ public class Application extends JFrame {
             currentApplication.returnButton.setContentAreaFilled(true);
             currentApplication.returnButton.setBorderPainted(true);
             currentApplication.returnButton.setEnabled(true);
+            currentApplication.contentButton.setIcon(currentApplication.contentIcon);
+            currentApplication.contentButton.setOpaque(true);
+            currentApplication.contentButton.setContentAreaFilled(true);
+            currentApplication.contentButton.setBorderPainted(true);
+            currentApplication.contentButton.setEnabled(true);
         }
     }
 
@@ -547,12 +569,65 @@ public class Application extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            currentApplication.scrollableList.setViewportView(currentApplication.list);
-            returnButton.setIcon(null);
-            returnButton.setOpaque(false);
-            returnButton.setContentAreaFilled(false);
-            returnButton.setBorderPainted(false);
-            returnButton.setEnabled(false);
+            if(!currentApplication.seeingText) {
+                currentApplication.scrollableList.setViewportView(currentApplication.list);
+                returnButton.setIcon(null);
+                returnButton.setOpaque(false);
+                returnButton.setContentAreaFilled(false);
+                returnButton.setBorderPainted(false);
+                returnButton.setEnabled(false);
+                currentApplication.contentButton.setIcon(null);
+                currentApplication.contentButton.setOpaque(false);
+                currentApplication.contentButton.setContentAreaFilled(false);
+                currentApplication.contentButton.setBorderPainted(false);
+                currentApplication.contentButton.setEnabled(false);
+            }else{
+                JTextArea wanted = new JTextArea();
+                wanted.setText(currentApplication.actualResult.get(1).get(currentApplication.selectedResult));
+                wanted.setEditable(false);
+                wanted.setFont(new Font("Arial", Font.BOLD, 14));
+                wanted.setLineWrap(true);
+                wanted.setWrapStyleWord(true);
+                currentApplication.scrollableList.setViewportView(wanted);
+                currentApplication.contentButton.setIcon(currentApplication.contentIcon);
+                currentApplication.contentButton.setOpaque(true);
+                currentApplication.contentButton.setContentAreaFilled(true);
+                currentApplication.contentButton.setBorderPainted(true);
+                currentApplication.contentButton.setEnabled(true);
+                currentApplication.seeingText = false;
+            }
+        }
+    }
+
+    /**
+     * Listener for the contentButton
+     */
+    public class ContentListener implements ActionListener{
+        Application currentApplication;
+
+        /**
+         * Constructor for the ContentListener
+         * @param application the current application
+         */
+        public ContentListener(Application application){
+            currentApplication = application;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JTextArea wanted = new JTextArea();
+            wanted.setText(currentApplication.actualResult.get(2).get(currentApplication.selectedResult));
+            wanted.setEditable(false);
+            wanted.setFont(new Font("Arial", Font.BOLD, 14));
+            wanted.setLineWrap(true);
+            wanted.setWrapStyleWord(true);
+            currentApplication.scrollableList.setViewportView(wanted);
+            currentApplication.contentButton.setIcon(null);
+            currentApplication.contentButton.setOpaque(false);
+            currentApplication.contentButton.setContentAreaFilled(false);
+            currentApplication.contentButton.setBorderPainted(false);
+            currentApplication.contentButton.setEnabled(false);
+            currentApplication.seeingText = true;
         }
     }
 
