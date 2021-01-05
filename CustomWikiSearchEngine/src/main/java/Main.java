@@ -142,7 +142,7 @@ public class Main {
      * @throws IOException
      * @throws ParseException
      */
-    public List<String> search(String field, String searchFor) throws IOException, ParseException {
+    public List<List<String>> search(String field, String searchFor) throws IOException, ParseException {
         int max_results = 100;
         System.out.println("Searching for " + searchFor + " at " + field);
         Directory dir = FSDirectory.open(Paths.get("index_folder"));
@@ -155,7 +155,7 @@ public class Main {
 
         TopDocs results = searcher.search(query, max_results);
         ScoreDoc[] hits = results.scoreDocs;
-        List<String> l = showResults(hits, searcher);
+        List<List<String>> l = showResults(hits, searcher);
         return l;
 
     }
@@ -168,7 +168,7 @@ public class Main {
      * @throws IOException
      * @throws ParseException
      */
-    public List<String> searchMultipleFields(String[] fields, String[] searchFor) throws IOException, ParseException {
+    public List<List<String>> searchMultipleFields(String[] fields, String[] searchFor) throws IOException, ParseException {
         int max_results = 2;
         Directory dir = FSDirectory.open(Paths.get("index_folder" ));
         IndexReader reader = DirectoryReader.open(dir);
@@ -203,16 +203,23 @@ public class Main {
      * @param searcher
      * @throws IOException
      */
-    private List<String> showResults(ScoreDoc[] hits, IndexSearcher searcher) throws IOException {
-        List<String> list = new ArrayList<>();
+    private List<List<String>> showResults(ScoreDoc[] hits, IndexSearcher searcher) throws IOException {
+        List<List<String>> list = new ArrayList<>();
+        List<String> titles = new ArrayList<>();
+        List<String> abstracts = new ArrayList<>();
+        List<String> contents = new ArrayList<>();
         for (ScoreDoc scoreDoc : hits) {
             System.out.println("doc="+scoreDoc.doc+" score="+scoreDoc.score);
             Document doc = searcher.doc(scoreDoc.doc);
             System.out.println("\t" + doc.get("title"));
 
-            list.add(doc.get("title"));
+            titles.add(doc.get("title"));
+            abstracts.add(doc.get("abstract"));
+            contents.add(doc.get("content"));
         }
-
+        list.add(titles);
+        list.add(abstracts);
+        list.add(contents);
         return list;
     }
 

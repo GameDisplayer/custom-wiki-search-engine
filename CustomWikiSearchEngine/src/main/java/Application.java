@@ -1,9 +1,12 @@
 import org.apache.lucene.queryparser.classic.ParseException;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,8 +26,12 @@ public class Application extends JFrame {
     private final JLabel content3 = new JLabel(";", JLabel.LEFT);
     ImageIcon helpIcon = createImageIcon("Icon/help.png", "help");
     JButton helpButton = new JButton(helpIcon);
+    ImageIcon returnIcon = createImageIcon("Icon/back.png", "back");
+    JButton returnButton = new JButton(returnIcon);
     JList list = new JList();
     JScrollPane scrollableList = new JScrollPane(list);
+    private List<List<String>> actualResult = new ArrayList<>();
+    private int selectedResult = 0;
 
     /**
      * Constructor for the application
@@ -41,6 +48,7 @@ public class Application extends JFrame {
 
         JPanel top = new JPanel();
         JPanel med = new JPanel();
+        med.setLayout(new BoxLayout(med, BoxLayout.X_AXIS));
         //Panel just for the string "Filters:"
         JPanel text = new JPanel();
         //Panel for the checkBox
@@ -79,8 +87,23 @@ public class Application extends JFrame {
 
         //Result part :
         list.setFont(police);
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.addListSelectionListener(new getAbstract(this));
         scrollableList.setPreferredSize(new Dimension(700, 500));
+        scrollableList.setMaximumSize(new Dimension(700, 500));
         scrollableList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollableList.setAlignmentY(Component.TOP_ALIGNMENT);
+        scrollableList.setAlignmentX(Component.CENTER_ALIGNMENT);
+        returnButton.setPreferredSize(new Dimension(32,20));
+        returnButton.setMaximumSize(new Dimension(32,20));
+        returnButton.addActionListener(new returnListener(this));
+        returnButton.setIcon(null);
+        returnButton.setOpaque(false);
+        returnButton.setContentAreaFilled(false);
+        returnButton.setBorderPainted(false);
+        returnButton.setEnabled(false);
+        returnButton.setAlignmentY(Component.TOP_ALIGNMENT);
+        med.add(returnButton);
         med.add(scrollableList);
 
         //String "Filters:" :
@@ -190,8 +213,9 @@ public class Application extends JFrame {
                             query[1] = split[1];
                         }
                         try {
-                            List<String> res = main.searchMultipleFields(fields, query);
-                            list.setListData(res.toArray());
+                            actualResult = main.searchMultipleFields(fields, query);
+                            List<String> l = actualResult.get(0);
+                            list.setListData(l.toArray());
                         }catch (Exception exception){
                             exception.printStackTrace();
                         }
@@ -221,8 +245,9 @@ public class Application extends JFrame {
                             query[2] = split[2];
                         }
                         try {
-                            List<String> res = main.searchMultipleFields(fields, query);
-                            list.setListData(res.toArray());
+                            actualResult = main.searchMultipleFields(fields, query);
+                            List<String> l = actualResult.get(0);
+                            list.setListData(l.toArray());
                         }catch (Exception exception){
                             exception.printStackTrace();
                         }
@@ -236,7 +261,8 @@ public class Application extends JFrame {
                 default:
                     String selectedField = field1.getSelectedItem().toString();
                     try {
-                        List<String> l = main.search(selectedField, jtf.getText());
+                        actualResult = main.search(selectedField, jtf.getText());
+                        List<String> l = actualResult.get(0);
                         list.setListData(l.toArray());
                     } catch (IOException | ParseException ioException) {
                         ioException.printStackTrace();
@@ -287,8 +313,9 @@ public class Application extends JFrame {
                                 query[1] = split[1];
                             }
                             try {
-                                List<String> res = main.searchMultipleFields(fields, query);
-                                list.setListData(res.toArray());
+                                actualResult = main.searchMultipleFields(fields, query);
+                                List<String> l = actualResult.get(0);
+                                list.setListData(l.toArray());
                             }catch (Exception exception){
                                 exception.printStackTrace();
                             }
@@ -318,8 +345,9 @@ public class Application extends JFrame {
                                 query[2] = split[2];
                             }
                             try {
-                                List<String> res = main.searchMultipleFields(fields, query);
-                                list.setListData(res.toArray());
+                                actualResult = main.searchMultipleFields(fields, query);
+                                List<String> l = actualResult.get(0);
+                                list.setListData(l.toArray());
                             }catch (Exception exception){
                                 exception.printStackTrace();
                             }
@@ -333,7 +361,8 @@ public class Application extends JFrame {
                     default:
                         String selectedField = field1.getSelectedItem().toString();
                         try {
-                            List<String> l = main.search(selectedField, jtf.getText());
+                            actualResult = main.search(selectedField, jtf.getText());
+                            List<String> l = actualResult.get(0);
                             list.setListData(l.toArray());
                         } catch (IOException | ParseException ioException) {
                             ioException.printStackTrace();
@@ -455,6 +484,75 @@ public class Application extends JFrame {
         } else {
             System.err.println("Couldn't find file: " + path);
             return null;
+        }
+    }
+
+    /**
+     * ListSelectionListener for the results
+     */
+    public static class getAbstract implements ListSelectionListener{
+        Application currentApplication;
+
+        /**
+         * Constructor for this class, in order to access the params of the application
+         * @param application the current application
+         */
+        public getAbstract(Application application){
+            currentApplication = application;
+        }
+
+        @Override
+        public void valueChanged(ListSelectionEvent e) {
+            int firstIndex = e.getFirstIndex();
+            int lastIndex = e.getLastIndex();
+            int index = 0;
+            if(firstIndex != lastIndex){
+                if(firstIndex == currentApplication.selectedResult){
+                    index = lastIndex;
+                }else{
+                    index = firstIndex;
+                }
+            }else{
+                index = firstIndex;
+            }
+            JTextArea wanted = new JTextArea(); //680,480
+            wanted.setText(currentApplication.actualResult.get(1).get(index));
+            wanted.setEditable(false);
+            wanted.setFont(new Font("Arial", Font.BOLD, 14));
+            wanted.setLineWrap(true);
+            wanted.setWrapStyleWord(true);
+            currentApplication.selectedResult = index;
+            currentApplication.scrollableList.setViewportView(wanted);
+            currentApplication.returnButton.setIcon(currentApplication.returnIcon);
+            currentApplication.returnButton.setOpaque(true);
+            currentApplication.returnButton.setContentAreaFilled(true);
+            currentApplication.returnButton.setBorderPainted(true);
+            currentApplication.returnButton.setEnabled(true);
+        }
+    }
+
+    /**
+     * Class to able the return button
+     */
+    public class returnListener implements ActionListener{
+        Application currentApplication;
+
+        /**
+         * Constructor for this class, in order to access the parameters of the application
+         * @param application the current application
+         */
+        public returnListener(Application application){
+            currentApplication = application;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            currentApplication.scrollableList.setViewportView(currentApplication.list);
+            returnButton.setIcon(null);
+            returnButton.setOpaque(false);
+            returnButton.setContentAreaFilled(false);
+            returnButton.setBorderPainted(false);
+            returnButton.setEnabled(false);
         }
     }
 
