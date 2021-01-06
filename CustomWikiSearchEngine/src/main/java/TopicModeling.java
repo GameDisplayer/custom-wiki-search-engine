@@ -37,7 +37,14 @@ public class TopicModeling {
         hmScienc = sortByValue(topicProfileOccurences(field, docsScience));
         hmRel = sortByValue(topicProfileOccurences(field, docsReligion));
 
+    }
 
+    public TopicModeling() throws IOException {
+        docsPerTopic = topicExtraction();
+
+        docsHistory = docsPerTopic.get(0);
+        docsScience = docsPerTopic.get(1);
+        docsReligion = docsPerTopic.get(2);
     }
 
 

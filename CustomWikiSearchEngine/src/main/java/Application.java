@@ -46,10 +46,19 @@ public class Application extends JFrame {
     private JCheckBox sciencesTopic = new JCheckBox("Sciences");
     private ScoreDoc[] actualScore;
 
+    List<Document> docsHistory, docsScience, docsReligion;
+
     /**
      * Constructor for the application
      */
-    public Application() {
+    public Application() throws IOException {
+
+        //Load the documents per topic for specific searches
+        TopicModeling tm = new TopicModeling();
+        this.docsHistory = tm.docsHistory;
+        this.docsReligion = tm.docsReligion;
+        this.docsScience = tm.docsScience;
+
         this.setTitle("Wiki Search");
         this.setSize(750, 660);
         this.setResizable(false);
@@ -622,15 +631,53 @@ public class Application extends JFrame {
                 }
                 break;
         }
-        for(Document doc : actualResult)
-        {
-            l.add(doc.get("title"));
+        List<Document> finalDocResult = new ArrayList<>();
+        List<Document> rest = new ArrayList<>();
+        for(Document doc : actualResult) {
+            if (historyTopic.isSelected() && isContained(docsHistory, doc)) {
+                finalDocResult.add(doc);
+            }
+            else if(sciencesTopic.isSelected() && isContained(docsScience, doc)) {
+                finalDocResult.add(doc);
+            }
+            else if (religionTopic.isSelected() && isContained(docsReligion, doc)){
+                finalDocResult.add(doc);
+            }
+            else
+            {
+                rest.add(doc);
+            }
+        }
+        finalDocResult.addAll(rest);
+        actualResult = finalDocResult;
+        for(Document doc : actualResult){
+            String tops=" [ ";
+            if(isContained(docsScience, doc))  tops += "science ";
+            if(isContained(docsHistory, doc)) tops += "history ";
+            if(isContained(docsReligion, doc))  tops += "religion ";
+            tops+= "]";
+            l.add(doc.get("title") + tops);
         }
         list.setListData(l.toArray());
 
     }
 
-    public static void main(String[] args) {
+    /**
+     * Tell if a document belongs to a set of document
+     * @param list of documents
+     * @param doc unit
+     * @return boolean
+     */
+    public boolean isContained(List<Document> list, Document doc) {
+
+        for(Document d : list) {
+            if (d.get("title").equals(doc.get("title")) && d.get("abstract").equals(doc.get("abstract"))) return true;
+        }
+        return false;
+    }
+
+
+    public static void main(String[] args) throws IOException {
         Application app = new Application();
     }
 }
