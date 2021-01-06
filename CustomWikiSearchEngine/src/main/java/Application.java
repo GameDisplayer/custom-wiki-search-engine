@@ -1,3 +1,4 @@
+import org.apache.lucene.document.Document;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.search.ScoreDoc;
 
@@ -35,7 +36,7 @@ public class Application extends JFrame {
     JButton contentButton = new JButton(contentIcon);
     JList list = new JList();
     JScrollPane scrollableList = new JScrollPane(list);
-    private List<List<String>> actualResult = new ArrayList<>();
+    private List<Document> actualResult = new ArrayList<>();
     private int selectedResult = 0;
     boolean seeingText = false;
     private final Color backgroundColor = new Color(250, 240, 230);
@@ -433,7 +434,7 @@ public class Application extends JFrame {
                 index = firstIndex;
             }
             JTextArea wanted = new JTextArea();
-            wanted.setText(currentApplication.actualResult.get(1).get(index));
+            wanted.setText(currentApplication.actualResult.get(index).get("abstract"));
             wanted.setEditable(false);
             wanted.setFont(new Font("Arial", Font.BOLD, 14));
             wanted.setLineWrap(true);
@@ -483,7 +484,7 @@ public class Application extends JFrame {
                 currentApplication.contentButton.setEnabled(false);
             }else{
                 JTextArea wanted = new JTextArea();
-                wanted.setText(currentApplication.actualResult.get(1).get(currentApplication.selectedResult));
+                wanted.setText(currentApplication.actualResult.get(currentApplication.selectedResult).get("abstract"));
                 wanted.setEditable(false);
                 wanted.setFont(new Font("Arial", Font.BOLD, 14));
                 wanted.setLineWrap(true);
@@ -516,7 +517,7 @@ public class Application extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             JTextArea wanted = new JTextArea();
-            wanted.setText(currentApplication.actualResult.get(2).get(currentApplication.selectedResult));
+            wanted.setText(currentApplication.actualResult.get(currentApplication.selectedResult).get("content"));
             wanted.setEditable(false);
             wanted.setFont(new Font("Arial", Font.BOLD, 14));
             wanted.setLineWrap(true);
@@ -546,6 +547,7 @@ public class Application extends JFrame {
         contentButton.setBorderPainted(false);
         contentButton.setEnabled(false);
 
+        List<String> l = new ArrayList<>();
         switch(numF){
             case 2:
                 String selected1 = field1.getSelectedItem().toString();
@@ -565,8 +567,6 @@ public class Application extends JFrame {
                     try {
                         actualResult = main.searchMultipleFields(fields, query);
                         actualScore = main.getActualScores();
-                        List<String> l = actualResult.get(0);
-                        list.setListData(l.toArray());
                     }catch (Exception exception){
                         exception.printStackTrace();
                     }
@@ -602,8 +602,6 @@ public class Application extends JFrame {
                     try {
                         actualResult = main.searchMultipleFields(fields, query);
                         actualScore = main.getActualScores();
-                        List<String> l = actualResult.get(0);
-                        list.setListData(l.toArray());
                     }catch (Exception exception){
                         exception.printStackTrace();
                     }
@@ -619,13 +617,17 @@ public class Application extends JFrame {
                 try {
                     actualResult = main.search(selectedField, jtf.getText());
                     actualScore = main.getActualScores();
-                    List<String> l = actualResult.get(0);
-                    list.setListData(l.toArray());
                 } catch (IOException | ParseException ioException) {
                     ioException.printStackTrace();
                 }
                 break;
         }
+        for(Document doc : actualResult)
+        {
+            l.add(doc.get("title"));
+        }
+        list.setListData(l.toArray());
+
     }
 
     public static void main(String[] args) {
