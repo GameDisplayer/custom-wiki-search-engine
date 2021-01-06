@@ -1,3 +1,4 @@
+import org.apache.lucene.document.Document;
 import org.apache.lucene.index.*;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.BytesRef;
@@ -28,6 +29,8 @@ public class Statistics {
 
         double N = reader.numDocs();
         double corpusLength = reader.getSumTotalTermFreq( field );
+
+        System.out.println(N + " _ " + corpusLength );
 
         System.out.printf( "%-30s%-10s%-10s%-10s%-10s\n", "TERM", "DF", "TOTAL_TF", "IDF", "p(w|c)" );
 
@@ -74,15 +77,49 @@ public class Statistics {
         index.close();
     }
 
+
+    public static double average(String field) throws IOException{
+        IndexReader index = DirectoryReader.open(FSDirectory.open(Paths.get("index_folder")));
+
+        int N = index.numDocs(); // the total number of documents in the index
+
+        int n=0;
+        //for all the document indexed
+        for (int i = 0; i < index.maxDoc(); i++) {
+            Document doc = index.document(i);
+            if(field.equals("topics"))
+            {
+                String[] topics = doc.getValues("topics");
+                n+=topics.length;
+            }
+            else {
+                String f = "";
+                if (doc.getField(field) != null) f = doc.getField(field).toString();
+                n += f.length();
+            }
+        }
+
+        index.close();
+
+        return n/N;
+    }
+
     public static void main(String[] args) throws IOException {
 
-        basicInfo("history", "content");
+//        basicInfo("history", "content");
+//
+//        corpusLevelStatistics("history", "abstract");
+//        corpusLevelStatistics("religion", "abstract");
+//        corpusLevelStatistics("science", "abstract");
+//
+//        iterateThroughVocab("abstract");
 
-        corpusLevelStatistics("history", "abstract");
-        corpusLevelStatistics("religion", "abstract");
-        corpusLevelStatistics("science", "abstract");
 
-        iterateThroughVocab("content");
+        System.out.println("Average length of titles = " + average("title"));
+        System.out.println("Average length of abstracts = " + average("abstract"));
+        System.out.println("Average length of content = " + average("content"));
+
+        System.out.println("Average number of topics = " + average("topics"));
 
 
     }
