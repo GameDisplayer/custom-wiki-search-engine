@@ -553,7 +553,7 @@ public class Application extends JFrame {
                 if(selected1 != selected2){
                     String[] fields = new String[]{selected1, selected2};
                     String queries = jtf.getText();
-                    String[] split = queries.split(";");       //NEED TO CLEAN QUERRY
+                    String[] split = queries.split(";");
                     String[] query = new String[2];
                     if(split.length==1){
                         query[0] = split[0];
@@ -590,6 +590,10 @@ public class Application extends JFrame {
                         query[0] = split[0];
                         query[1] = split[0];
                         query[2] = split[0];
+                    }else if(split.length==2){
+                        query[0] = split[0];
+                        query[1] = split[1];
+                        query[2] = split[2];
                     }else{
                         query[0] = split[0];
                         query[1] = split[1];
