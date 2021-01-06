@@ -103,6 +103,8 @@ public class Application extends JFrame {
                     jtf.setText("");
                     jtf.setForeground(Color.BLACK);
                 }
+                selectedResult = 0;
+                seeingText = false;
             }
         });
 
@@ -530,6 +532,22 @@ public class Application extends JFrame {
     }
 
     public void launchSearch(JFrame current){
+        selectedResult = 0;
+        actualResult = new ArrayList<>();
+        actualScore = new ScoreDoc[0];
+        list.setListData(new Object[0]);
+        scrollableList.setViewportView(list);
+        returnButton.setIcon(null);
+        returnButton.setOpaque(false);
+        returnButton.setContentAreaFilled(false);
+        returnButton.setBorderPainted(false);
+        returnButton.setEnabled(false);
+        contentButton.setIcon(null);
+        contentButton.setOpaque(false);
+        contentButton.setContentAreaFilled(false);
+        contentButton.setBorderPainted(false);
+        contentButton.setEnabled(false);
+
         switch(numF){
             case 2:
                 String selected1 = field1.getSelectedItem().toString();
