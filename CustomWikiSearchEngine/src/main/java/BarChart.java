@@ -13,13 +13,13 @@ import java.util.Map;
 
 public class BarChart extends ApplicationFrame {
 
-    public BarChart(String applicationTitle, String chartTitle) throws IOException {
+    public BarChart(String field, String applicationTitle, String chartTitle) throws IOException {
         super(applicationTitle);
         JFreeChart barChart = ChartFactory.createBarChart (
                 chartTitle,
                 "Topic",
                 "Occurences",
-                createDataset(),
+                createDataset(field),
                 PlotOrientation.VERTICAL,
                 true, true, false);
 
@@ -38,12 +38,12 @@ public class BarChart extends ApplicationFrame {
         }
     }
 
-    private CategoryDataset createDataset() throws IOException {
+    private CategoryDataset createDataset(String field) throws IOException {
         final String history = "History";
         final String science = "Sciences";
         final String religion = "Religion & Belief";
 
-        TopicModeling tp = new TopicModeling("abtsract");
+        TopicModeling tp = new TopicModeling(field);
 
         final DefaultCategoryDataset dataset =
                 new DefaultCategoryDataset( );
@@ -56,7 +56,7 @@ public class BarChart extends ApplicationFrame {
     }
 
     public static void main( String[ ] args ) throws IOException {
-        BarChart chart = new BarChart("WikiDump Topics Statistics",
+        BarChart chart = new BarChart("abstract", "WikiDump Topics Statistics",
                 "Top 10 words per topic");
         chart.pack( );
         //RefineryUtilities.centerFrameOnScreen( chart );

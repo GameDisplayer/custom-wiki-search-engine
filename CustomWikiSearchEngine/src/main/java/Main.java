@@ -141,8 +141,8 @@ public class Main {
      * @param field the field in which we want to search
      * @param searchFor the query
      * @return List<String> : the answer to the querry
-     * @throws IOException
-     * @throws ParseException
+     * @throws IOException when opening indexreader
+     * @throws ParseException for results
      */
     public List<List<String>> search(String field, String searchFor) throws IOException, ParseException {
         int max_results = 100;
@@ -158,8 +158,7 @@ public class Main {
         TopDocs results = searcher.search(query, max_results);
         ScoreDoc[] hits = results.scoreDocs;
         actualScores = hits;
-        List<List<String>> l = showResults(hits, searcher);
-        return l;
+        return showResults(hits, searcher);
 
     }
 
@@ -168,8 +167,8 @@ public class Main {
      * @param fields the list of field in which we want to search
      * @param searchFor the list of querry (one by fields)
      * @return List<String> the answer of the querry
-     * @throws IOException
-     * @throws ParseException
+     * @throws IOException when opening IndexReader
+     * @throws ParseException when parsing for response
      */
     public List<List<String>> searchMultipleFields(String[] fields, String[] searchFor) throws IOException, ParseException {
         int max_results = 2;
@@ -190,8 +189,8 @@ public class Main {
 
     /**
      * Get topics from the csv value
-     * @param topics
-     * @return
+     * @param topics a String containing all topics of a document
+     * @return the list of topics extracted
      */
     private static List<String> getTopics(String topics){
         String[] d = topics.split("'");//"'|,|\\[|\\]");
@@ -204,9 +203,9 @@ public class Main {
 
     /**
      * Show the best results of a query
-     * @param hits
-     * @param searcher
-     * @throws IOException
+     * @param hits ScoreDoc[] variable
+     * @param searcher IndexSearcher for result output
+     * @throws IOException when displaying score docs
      */
     private List<List<String>> showResults(ScoreDoc[] hits, IndexSearcher searcher) throws IOException {
         List<List<String>> list = new ArrayList<>();

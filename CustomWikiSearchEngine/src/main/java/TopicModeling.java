@@ -8,7 +8,9 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.tartarus.snowball.ext.PorterStemmer;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -17,6 +19,8 @@ import java.util.*;
 import edu.stanford.nlp.util.logging.RedwoodConfiguration;
 
 public class TopicModeling {
+
+    final static String RESOURCES_PATH = "src/main/resources/";
 
     List<List<Document>> docsPerTopic;
     List<Document> docsHistory, docsScience, docsReligion;
@@ -29,9 +33,9 @@ public class TopicModeling {
         docsScience = docsPerTopic.get(1);
         docsReligion = docsPerTopic.get(2);
 
-        hmHist = sortByValue(topicModeling(field, docsHistory));
-        hmScienc = sortByValue(topicModeling(field, docsScience));
-        hmRel = sortByValue(topicModeling(field, docsReligion));
+        hmHist = sortByValue(topicProfileOccurences(field, docsHistory));
+        hmScienc = sortByValue(topicProfileOccurences(field, docsScience));
+        hmRel = sortByValue(topicProfileOccurences(field, docsReligion));
 
 
     }
@@ -93,7 +97,7 @@ public class TopicModeling {
                     stem.setCurrent(tok.lemma().toLowerCase());
                     stem.stem();
                     String result = stem.getCurrent();
-                    if(result.equals("histor") || result.equals("histori")) {
+                    if(result.equals("histor") || result.equals("histori") || result.equals("pseudohistori")) {
                         if (indexh == 0) {
                             historyDocList.add(doc);
                             indexh++;
@@ -101,7 +105,7 @@ public class TopicModeling {
                         }
                     }
                     if(result.equals("scienc") || result.equals("biotechnologi") || result.equals("biologi")
-                            || result.equals("astronomi") || result.equals("chemistri")) {
+                            || result.equals("astronomi") || result.equals("chemistri") || result.equals("pseudosci")) {
                         if (indexs == 0) {
                             scienceDocList.add(doc);
                             indexs++;
@@ -120,7 +124,7 @@ public class TopicModeling {
             //if no stems have been detected -> rest
             if (indexh + indexs + indexr == 0) {
                 rest++;
-                for(String topic : topics){ System.out.println(topic);}
+                //for(String topic : topics){ System.out.println(topic);}
             }
             else if (indexh + indexs + indexr > 1) {
                 intersection++;
@@ -144,20 +148,20 @@ public class TopicModeling {
      * @param docsPerTopic documents per topic
      * @return HashMap<String, Integer> occurences of words in documents per topic
      */
-    private static HashMap<String, Integer> topicModeling(String field, List<Document> docsPerTopic) throws IOException {
+    private static HashMap<String, Integer> topicProfileOccurences(String field, List<Document> docsPerTopic) throws IOException {
 
         HashMap<String, Integer> myWordsCount = new HashMap<>();
 
-        List<String> stopwords = Files.readAllLines(Paths.get("src/main/resources/english_stopwords.txt"));
+        List<String> stopwords = Files.readAllLines(Paths.get(RESOURCES_PATH + "english_stopwords.txt"));
 
         for(Document doc : docsPerTopic) {
-            String f = doc.getField(field).toString();
+            String a = doc.getField(field).toString();
 
             Properties props = new Properties();
             props.setProperty("annotators", "tokenize");
             RedwoodConfiguration.current().clear().apply();
             StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-            CoreDocument document = pipeline.processToCoreDocument(f);
+            CoreDocument document = pipeline.processToCoreDocument(a);
 
             String[] words;
             for (CoreLabel tok : document.tokens()) {
@@ -179,10 +183,54 @@ public class TopicModeling {
         return myWordsCount;
     }
 
+
     /**
-     * Function to sort hashmap by values
+     * Method to calculate the IDF of the first 1000 words of top occurrences (irrelevant for lower)
+     * @param words the raw frequency per term (occurences)
+     * @param docs list of the topic documents
+     * @return HashMap<String, Double> the first 1000 worlds top occured with their IDF
+     */
+    private static HashMap<String, Double> topicProfileIDF(String field, HashMap<String, Integer> words, List<Document> docs) {
+        HashMap<String, Double> idfs = new HashMap<>();
+
+        int count = 1;
+        int stop = 1000;
+        for (Map.Entry<String, Integer> en : words.entrySet()) {
+            System.out.println(count + " / " + stop);
+            double idf = idf(en.getKey(), field, docs);
+            idfs.put(en.getKey(), idf);
+            count++;
+
+            if (count == stop) break;
+        }
+        return idfs;
+    }
+
+    /**
+     * Method to calculate the TFIDF of the words from which IDF has already been calculated
+     * @param idfs 1000 words that top occured with their IDF value
+     * @param counts words occurences
+     * @return HashMap<String, Double> the first 1000 worlds top occured with their TFIDF
+     */
+    private static HashMap<String, Double> topicProfileTFIDF(HashMap<String, Double> idfs, HashMap<String, Integer> counts) {
+        HashMap<String, Double> tfidfs = new HashMap<>();
+
+        int count = 1;
+        int stop = 1000;
+        for (Map.Entry<String, Double> idf : idfs.entrySet()) {
+            System.out.println(count + " / " + stop);
+            double tfidf = tfidf(idf.getValue(), counts.get(idf.getKey()));
+            tfidfs.put(idf.getKey(), tfidf);
+            count++;
+        }
+        return tfidfs;
+    }
+
+
+    /**
+     * Function to sort hashmap by Integer values
      * @param unSortedMap HashMap<String, Integer> not yet sorted
-     * @return HashMap<String, Integer> sorted by Integer (ascending order)
+     * @return HashMap<String, Integer> sorted by Integer (descending order)
      */
     private static HashMap<String, Integer> sortByValue(HashMap<String, Integer> unSortedMap)
     {
@@ -198,21 +246,46 @@ public class TopicModeling {
         return reverseSortedMap;
     }
 
+    /**
+     * Function to sort hashmap by Double values
+     * @param unSortedMap HashMap<String, Double> not yet sorted
+     * @return HashMap<String, Double> sorted by Double (ascending order if desc = false, descending order if desc = true)
+     */
+    private static HashMap<String, Double> sortByValueD(HashMap<String, Double> unSortedMap, boolean desc)
+    {
+        //LinkedHashMap preserve the ordering of elements in which they are inserted
+        LinkedHashMap<String, Double> sortedMap = new LinkedHashMap<>();
+
+        if(desc){
+            unSortedMap.entrySet()
+                    .stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                    .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
+        }
+        else {
+            unSortedMap.entrySet()
+                    .stream()
+                    .sorted(Map.Entry.comparingByValue(Comparator.naturalOrder()))
+                    .forEachOrdered(x -> sortedMap.put(x.getKey(), x.getValue()));
+        }
+
+        return sortedMap;
+    }
+
 
     /**
-     * Method to display in log the top occurences words
+     * Method to display in log the top occurences words with their IDF and TFIDF per topic
      * @param hm hashmap of String, Integer -> word, occurences
      * @param top number of printed words
      * @param docs list of docs to calculate idf and tfidf
-     * @throws IOException when opening reader
      */
-    public static void displayTopWords(HashMap<String, Integer> hm, int top, List<Document> docs) throws IOException {
+    public static void displayTopWords(String field, HashMap<String, Integer> hm, int top, List<Document> docs) {
 
         HashMap<String, Integer> hmOrd = sortByValue(hm);
         int count = 1;
         for (Map.Entry<String, Integer> en : hmOrd.entrySet()) {
             if(count <= top ) {
-                double idf = idf(en.getKey(), "abstract", docs);
+                double idf = idf(en.getKey(), field, docs);
                 double tfidf = tfidf(idf, en.getValue());
                 System.out.println(count + " -> Key = " + en.getKey() + ", Occurences = " + en.getValue() + ", IDF  = " + idf + ", TFIDF = " + tfidf);
             }
@@ -222,28 +295,28 @@ public class TopicModeling {
     }
 
 
-
     /**
      * Inverse document frequency
      * @param term to calculate
      * @param field to explore
      * @param docsTopic as a subset of the dump
-     * @return idf log(N/n) smoothed (+1) inverse document frequency smooth
-     * @throws IOException when reading docs or stopwords
+     * @return idf log(N+1/n+1) smoothed -> inverse document frequency smooth
      */
-    public static double idf(String term, String field, List<Document> docsTopic) throws IOException {
+    public static double idf(String term, String field, List<Document> docsTopic) {
         int N = docsTopic.size() + 1;
         int n = 1;
 
         for(Document doc : docsTopic) {
-            String f = doc.getField(field).toString();
+            String fiel = doc.getField(field).toString();
 
+            /* tokenization with Stanford NLP core */
             Properties props = new Properties();
             props.setProperty("annotators", "tokenize");
             RedwoodConfiguration.current().clear().apply();
             StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
-            CoreDocument document = pipeline.processToCoreDocument(f);
+            CoreDocument document = pipeline.processToCoreDocument(fiel);
 
+            //word present in document ?
             boolean here= false;
             String[] words;
             for (CoreLabel tok : document.tokens()) {
@@ -252,6 +325,7 @@ public class TopicModeling {
                 for (String word : words) {
                     if (word.equals(term)) {
                         here = true;
+                        break;
                     }
                 }
             }
@@ -261,15 +335,26 @@ public class TopicModeling {
         return Math.log10(N/n);
     }
 
-    private static void writeInFileOccurences(String prefixname) {
-        try {
-            File myObj = new File(prefixname + "_occurences.txt");
-            if (myObj.createNewFile()) {
-                System.out.println("File created: " + myObj.getName());
-            } else {
-                System.out.println("File already exists.");
+    /**
+     * Method to write the HashMap of words occurences in a txt file named *topic*_occurences.txt
+     * @param prefixname prefix name usually the topic
+     * @param hm Hashmap of words occurences
+     */
+    private static void writeInFileOccurrences(String prefixname, HashMap<String, Integer> hm) {
+
+        File file = new File(RESOURCES_PATH + "topics_profile/" + prefixname + "_occurrences.txt");
+
+        try (BufferedWriter bf = new BufferedWriter(new FileWriter(file))) {
+            for (Map.Entry<String, Integer> entry : hm.entrySet()) {
+
+                //put key and value separated by a colon
+                bf.write(entry.getKey() + ":" + entry.getValue());
+
+                //new line
+                bf.newLine();
             }
 
+            bf.flush();
 
         } catch (IOException e) {
             System.out.println("An error occurred.");
@@ -278,9 +363,37 @@ public class TopicModeling {
     }
 
     /**
-     * tfid function
-     * @param idf calculated
-     * @param tf calculated
+     * Method to write the Hashmap of top 1000 words and idf or tfidf (depends on suffix)
+     * @param prefixname usually the topic
+     * @param suffix idfs or tfidfs depending on the HashMap
+     * @param hm HashMap of TFIDF or IDF of top 1000 words
+     */
+    private static void writeInFileTF_IDFS(String prefixname, String suffix, HashMap<String, Double> hm) {
+
+        File file = new File(RESOURCES_PATH + "topics_profile/" + prefixname + "_"+suffix+".txt");
+
+        try (BufferedWriter bf = new BufferedWriter(new FileWriter(file))) {
+            for (Map.Entry<String, Double> entry : hm.entrySet()) {
+
+                //put key and value separated by a colon
+                bf.write(entry.getKey() + ":" + entry.getValue());
+
+                //new line
+                bf.newLine();
+            }
+
+            bf.flush();
+
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * TFIDF function based on the weights calculated
+     * @param idf calculated with the idf function
+     * @param tf calculated calculated with the raw count of occurrences
      * @return tfidf value
      */
     public static double tfidf(double idf, Integer tf) {
@@ -295,23 +408,51 @@ public class TopicModeling {
         String field = "abstract";
         /* History */
         List<Document> docsHistory = docsPerTopic.get(0);
-        HashMap<String, Integer> hmHist = topicModeling(field, docsHistory);
+        HashMap<String, Integer> hmHist = topicProfileOccurences(field, docsHistory);
 
         /* Sciences */
         List<Document> docsScience = docsPerTopic.get(1);
-        HashMap<String, Integer> hmScienc = topicModeling(field, docsScience);
+        HashMap<String, Integer> hmScienc = topicProfileOccurences(field, docsScience);
 
         /* Religion & belief */
         List<Document> docsReligion = docsPerTopic.get(2);
-        HashMap<String, Integer> hmRel = topicModeling(field, docsReligion);
+        HashMap<String, Integer> hmRel = topicProfileOccurences(field, docsReligion);
 
 
+        /* Display top 15 words based on occurrences and topics */
         System.out.println("\nTop words of History :");
-        displayTopWords(hmHist, 15, docsHistory);
+        displayTopWords(field, hmHist, 15, docsHistory);
         System.out.println("\nTop words of Sciences :");
-        displayTopWords(hmScienc, 15, docsScience);
+        displayTopWords(field, hmScienc, 15, docsScience);
         System.out.println("\nTop words of Religion&Belief :");
-        displayTopWords(hmRel, 15, docsReligion);
+        displayTopWords(field, hmRel, 15, docsReligion);
+
+
+        /* Create topic_occurrences.txt
+        writeInFileOccurrences("history", sortByValue(hmHist));
+        writeInFileOccurrences("science", sortByValue(hmScienc));
+        writeInFileOccurrences("religion", sortByValue(hmRel));
+
+         */
+
+
+        HashMap<String, Double> histIDFs= sortByValueD(topicProfileIDF(field, sortByValue(hmHist), docsHistory), false);
+        HashMap<String, Double> scienceIDFs= sortByValueD(topicProfileIDF(field, sortByValue(hmScienc), docsScience), false);
+        HashMap<String, Double> religionIDFs = sortByValueD(topicProfileIDF(field, sortByValue(hmRel), docsReligion), false);
+
+        /* Create topic_idfs.txt
+        writeInFileTF_IDFS("history", "idfs", histIDFs);
+        writeInFileTF_IDFS("science", "idfs", scienceIDFs);
+        writeInFileTF_IDFS("religion", "idfs",religionIDFs);
+
+         */
+
+
+
+        /* topic_tfidfs.txt */
+        writeInFileTF_IDFS("history", "tfidfs", sortByValueD(topicProfileTFIDF(histIDFs, hmHist), true));
+        writeInFileTF_IDFS("science", "tfidfs", sortByValueD(topicProfileTFIDF(scienceIDFs, hmScienc), true));
+        writeInFileTF_IDFS("religion", "tfidfs", sortByValueD(topicProfileTFIDF(religionIDFs, hmRel), true));
 
     }
 }
