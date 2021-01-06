@@ -1,9 +1,10 @@
 import org.apache.lucene.queryparser.classic.ParseException;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.text.AbstractDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
@@ -36,43 +37,59 @@ public class Application extends JFrame {
     private List<List<String>> actualResult = new ArrayList<>();
     private int selectedResult = 0;
     boolean seeingText = false;
+    private final Color backgroundColor = new Color(250, 240, 230);
+    private final Color buttonColor = new Color(222, 184, 135);
+    private JCheckBox historyTopic = new JCheckBox("History");
+    private JCheckBox religionTopic = new JCheckBox("Religion");
+    private JCheckBox sciencesTopic = new JCheckBox("Sciences");
 
     /**
      * Constructor for the application
      */
     public Application() {
         this.setTitle("Wiki Search");
-        this.setSize(750, 650);
+        this.setSize(750, 660);
         this.setResizable(false);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
         JPanel container = new JPanel();
-        container.setBackground(Color.white);
+        container.setBackground(backgroundColor);
+        container.setBorder(new EmptyBorder(0,10,10,10));
         container.setLayout(new BorderLayout());
 
         JPanel top = new JPanel();
+        top.setBackground(backgroundColor);
         JPanel sidesButton = new JPanel();
         sidesButton.setLayout(new BoxLayout(sidesButton, BoxLayout.Y_AXIS));
+        sidesButton.setBackground(backgroundColor);
         JPanel med = new JPanel();
         med.setLayout(new BoxLayout(med, BoxLayout.X_AXIS));
+        med.setBackground(backgroundColor);
         //Panel just for the string "Filters:"
         JPanel text = new JPanel();
+        text.setBackground(backgroundColor);
         //Panel for the checkBox
         JPanel multFields = new JPanel();
+        multFields.setLayout(new BoxLayout(multFields, BoxLayout.LINE_AXIS));
+        multFields.setBackground(backgroundColor);
         //Panel for choosing the field(s)
-        JPanel fields = new JPanel();
-        fields.setLayout(new BoxLayout(fields, BoxLayout.LINE_AXIS));
-        //Panel for all the fields settings (checkBox + choose)
+        JPanel topics = new JPanel();
+        topics.setLayout(new BoxLayout(topics, BoxLayout.LINE_AXIS));
+        topics.setBackground(backgroundColor);
+        //Panel for all the filters
         JPanel choosable = new JPanel();
         choosable.setLayout(new BoxLayout(choosable, BoxLayout.Y_AXIS));
-        //Panel with all the filters
+        choosable.setBackground(backgroundColor);
+        //Panel with all the filters (need to align all)
         JPanel filters = new JPanel(new BorderLayout());
+        filters.setBackground(backgroundColor);
 
         //Search bar :
         Font police = new Font("Arial", Font.BOLD, 14);
         jtf.setFont(police);
         jtf.setPreferredSize(new Dimension(650, 30));
         jtf.setForeground(Color.GRAY);
+        jtf.setBorder(new LineBorder(Color.BLACK));
         top.add(jtf);
         jtf.addKeyListener(new JtextFileEnterListener(this));
         jtf.addMouseListener(new MouseAdapter(){
@@ -82,12 +99,16 @@ public class Application extends JFrame {
                 numClick += 1;
                 if(numClick == 1) {
                     jtf.setText("");
+                    jtf.setForeground(Color.BLACK);
                 }
             }
         });
 
         //Go button :
         JButton jb = new JButton("GO");
+        jb.setBackground(buttonColor);
+        jb.setPreferredSize(new Dimension(55,30));
+        jb.setBorder(new LineBorder(Color.BLACK));
         jb.addActionListener(new ButtonListener(this));
         top.add(jb);
 
@@ -100,6 +121,7 @@ public class Application extends JFrame {
         scrollableList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         scrollableList.setAlignmentY(Component.TOP_ALIGNMENT);
         scrollableList.setAlignmentX(Component.CENTER_ALIGNMENT);
+        scrollableList.setBorder(new LineBorder(Color.BLACK));
         returnButton.setPreferredSize(new Dimension(32,20));
         returnButton.setMaximumSize(new Dimension(32,20));
         returnButton.addActionListener(new returnListener(this));
@@ -108,6 +130,8 @@ public class Application extends JFrame {
         returnButton.setContentAreaFilled(false);
         returnButton.setBorderPainted(false);
         returnButton.setEnabled(false);
+        returnButton.setBackground(buttonColor);
+        returnButton.setBorder(new LineBorder(Color.BLACK));
         sidesButton.add(returnButton);
         contentButton.setPreferredSize(new Dimension(32,32));
         contentButton.setMaximumSize(new Dimension(32,32));
@@ -117,70 +141,86 @@ public class Application extends JFrame {
         contentButton.setContentAreaFilled(false);
         contentButton.setBorderPainted(false);
         contentButton.setEnabled(false);
+        contentButton.setBackground(buttonColor);
         contentButton.setAlignmentY(Component.TOP_ALIGNMENT);
+        contentButton.setBorder(new LineBorder(Color.BLACK));
         sidesButton.add(contentButton);
         sidesButton.setAlignmentY(Component.TOP_ALIGNMENT);
         med.add(sidesButton);
         med.add(scrollableList);
 
         //String "Filters:" :
-        JLabel filterString = new JLabel("Filters :", JLabel.CENTER);
+        JLabel filterString = new JLabel("Filters :", JLabel.RIGHT);
         filterString.setFont(police);
         text.add(filterString);
 
         //Selection of the fields :
         JLabel content = new JLabel("Field :", JLabel.LEFT);
         content.setFont(new Font("Arial", Font.ITALIC, 14));
-        content.setAlignmentY(Component.BOTTOM_ALIGNMENT);
         field1.setPreferredSize(new Dimension(80, 20));
         field1.setSelectedIndex(2);
         field1.setMaximumSize(new Dimension(80, 20));
-        field1.setAlignmentY(Component.BOTTOM_ALIGNMENT);
+        field1.setBackground(backgroundColor);
         content2.setFont(new Font("Arial", Font.ITALIC, 14));
-        content2.setAlignmentY(Component.BOTTOM_ALIGNMENT);
         content2.setVisible(false);
         field2.setPreferredSize(new Dimension(80, 20));
         field2.setSelectedIndex(0);
         field2.setMaximumSize(new Dimension(80, 20));
-        field2.setAlignmentY(Component.BOTTOM_ALIGNMENT);
+        field2.setBackground(backgroundColor);
         field2.setVisible(false);
         content3.setFont(new Font("Arial", Font.ITALIC, 14));
-        content3.setAlignmentY(Component.BOTTOM_ALIGNMENT);
         content3.setVisible(false);
         field3.setPreferredSize(new Dimension(80, 20));
         field3.setSelectedIndex(1);
         field3.setMaximumSize(new Dimension(80, 20));
-        field3.setAlignmentY(Component.BOTTOM_ALIGNMENT);
+        field3.setBackground(backgroundColor);
         field3.setVisible(false);
-        fields.add(content);
-        fields.add(Box.createHorizontalStrut(5));
-        fields.add(field1);
-        fields.add(Box.createHorizontalStrut(5));
-        fields.add(content2);
-        fields.add(Box.createHorizontalStrut(5));
-        fields.add(field2);
-        fields.add(Box.createHorizontalStrut(5));
-        fields.add(content3);
-        fields.add(Box.createHorizontalStrut(5));
-        fields.add(field3);
 
         //CheckBox for multipel fields :
-        numFields.setAlignmentX(Component.CENTER_ALIGNMENT);
         numFields.addItemListener(new MultiFieldsListener());
         numFields.addActionListener(new numberOfFields(this));
+        numFields.setBackground(backgroundColor);
         helpButton.setPreferredSize(new Dimension(20,20));
         helpButton.addActionListener(new PopUpInformation(this));
-        multFields.add(helpButton);
-        multFields.add(numFields);
+        helpButton.setBackground(buttonColor);
+        helpButton.setBorder(new LineBorder(Color.BLACK));
 
         //Filter regarding the fields :
-        multFields.setAlignmentX(Component.CENTER_ALIGNMENT);
-        multFields.setAlignmentY(Component.TOP_ALIGNMENT);
-        choosable.add(multFields);
-        fields.setAlignmentX(Component.CENTER_ALIGNMENT);
-        choosable.add(fields);
+        multFields.add(helpButton);
+        multFields.add(Box.createHorizontalStrut(10));
+        multFields.add(content);
+        multFields.add(Box.createHorizontalStrut(5));
+        multFields.add(numFields);
+        multFields.add(Box.createHorizontalStrut(5));
+        multFields.add(field1);
+        multFields.add(Box.createHorizontalStrut(5));
+        multFields.add(content2);
+        multFields.add(Box.createHorizontalStrut(5));
+        multFields.add(field2);
+        multFields.add(Box.createHorizontalStrut(5));
+        multFields.add(content3);
+        multFields.add(Box.createHorizontalStrut(5));
+        multFields.add(field3);
+
+        //Topics filters :
+        JLabel topic = new JLabel("Topic :", JLabel.LEFT);
+        topic.setFont(new Font("Arial", Font.ITALIC, 14));
+        historyTopic.setBackground(backgroundColor);
+        religionTopic.setBackground(backgroundColor);
+        sciencesTopic.setBackground(backgroundColor);
+        topics.add(topic);
+        topics.add(Box.createHorizontalStrut(5));
+        topics.add(historyTopic);
+        topics.add(Box.createHorizontalStrut(5));
+        topics.add(religionTopic);
+        topics.add(Box.createHorizontalStrut(5));
+        topics.add(sciencesTopic);
 
         //All the filters :
+        multFields.setAlignmentX(Component.LEFT_ALIGNMENT);
+        topics.setAlignmentX(Component.LEFT_ALIGNMENT);
+        choosable.add(multFields);
+        choosable.add(topics);
         filters.add(choosable, BorderLayout.WEST);
 
         //General layout :
@@ -213,79 +253,7 @@ public class Application extends JFrame {
          * @param e the click
          */
         public void actionPerformed(ActionEvent e) {
-            switch(numF){
-                case 2:
-                    String selected1 = field1.getSelectedItem().toString();
-                    String selected2 = field2.getSelectedItem().toString();
-                    if(selected1 != selected2){
-                        String[] fields = new String[]{selected1, selected2};
-                        String queries = jtf.getText();
-                        String[] split = queries.split(";");       //NEED TO CLEAN QUERRY
-                        String[] query = new String[2];
-                        if(split.length==1){
-                            query[0] = split[0];
-                            query[1] = split[0];
-                        }else{
-                            query[0] = split[0];
-                            query[1] = split[1];
-                        }
-                        try {
-                            actualResult = main.searchMultipleFields(fields, query);
-                            List<String> l = actualResult.get(0);
-                            list.setListData(l.toArray());
-                        }catch (Exception exception){
-                            exception.printStackTrace();
-                        }
-                    }else{
-                        JOptionPane.showMessageDialog(current,
-                              "Please, select different fields.",
-                              "Fields error",
-                              JOptionPane.ERROR_MESSAGE);
-                    }
-                    break;
-                case 3:
-                    selected1 = field1.getSelectedItem().toString();
-                    selected2 = field2.getSelectedItem().toString();
-                    String selected3 = field3.getSelectedItem().toString();
-                    if((!selected1.equals(selected2)) && (!selected2.equals(selected3)) && (!selected1.equals(selected3))){
-                        String[] fields = new String[]{selected1, selected2, selected3};
-                        String queries = jtf.getText();
-                        String[] split = queries.split(";");       //NEED TO CLEAN QUERRY
-                        String[] query = new String[3];
-                        if(split.length==1){
-                            query[0] = split[0];
-                            query[1] = split[0];
-                            query[2] = split[0];
-                        }else{
-                            query[0] = split[0];
-                            query[1] = split[1];
-                            query[2] = split[2];
-                        }
-                        try {
-                            actualResult = main.searchMultipleFields(fields, query);
-                            List<String> l = actualResult.get(0);
-                            list.setListData(l.toArray());
-                        }catch (Exception exception){
-                            exception.printStackTrace();
-                        }
-                    }else{
-                        JOptionPane.showMessageDialog(current,
-                              "Please, select different fields.",
-                              "Fields error",
-                              JOptionPane.ERROR_MESSAGE);
-                    }
-                    break;
-                default:
-                    String selectedField = field1.getSelectedItem().toString();
-                    try {
-                        actualResult = main.search(selectedField, jtf.getText());
-                        List<String> l = actualResult.get(0);
-                        list.setListData(l.toArray());
-                    } catch (IOException | ParseException ioException) {
-                        ioException.printStackTrace();
-                    }
-                    break;
-            }
+            launchSearch(current);
         }
     }
 
@@ -313,79 +281,7 @@ public class Application extends JFrame {
         @Override
         public void keyPressed(KeyEvent e) {
             if(e.getKeyCode() == KeyEvent.VK_ENTER){
-                switch(numF){
-                    case 2:
-                        String selected1 = field1.getSelectedItem().toString();
-                        String selected2 = field2.getSelectedItem().toString();
-                        if(selected1 != selected2){
-                            String[] fields = new String[]{selected1, selected2};
-                            String queries = jtf.getText();
-                            String[] split = queries.split(";");       //NEED TO CLEAN QUERRY
-                            String[] query = new String[2];
-                            if(split.length==1){
-                                query[0] = split[0];
-                                query[1] = split[0];
-                            }else{
-                                query[0] = split[0];
-                                query[1] = split[1];
-                            }
-                            try {
-                                actualResult = main.searchMultipleFields(fields, query);
-                                List<String> l = actualResult.get(0);
-                                list.setListData(l.toArray());
-                            }catch (Exception exception){
-                                exception.printStackTrace();
-                            }
-                        }else{
-                            JOptionPane.showMessageDialog(current,
-                                  "Please, select different fields.",
-                                  "Fields error",
-                                  JOptionPane.ERROR_MESSAGE);
-                        }
-                        break;
-                    case 3:
-                        selected1 = field1.getSelectedItem().toString();
-                        selected2 = field2.getSelectedItem().toString();
-                        String selected3 = field3.getSelectedItem().toString();
-                        if((!selected1.equals(selected2)) && (!selected2.equals(selected3)) && (!selected1.equals(selected3))){
-                            String[] fields = new String[]{selected1, selected2, selected3};
-                            String queries = jtf.getText();
-                            String[] split = queries.split(";");
-                            String[] query = new String[3];
-                            if(split.length==1){
-                                query[0] = split[0];
-                                query[1] = split[0];
-                                query[2] = split[0];
-                            }else{
-                                query[0] = split[0];
-                                query[1] = split[1];
-                                query[2] = split[2];
-                            }
-                            try {
-                                actualResult = main.searchMultipleFields(fields, query);
-                                List<String> l = actualResult.get(0);
-                                list.setListData(l.toArray());
-                            }catch (Exception exception){
-                                exception.printStackTrace();
-                            }
-                        }else{
-                            JOptionPane.showMessageDialog(current,
-                                  "Please, select different fields.",
-                                  "Fields error",
-                                  JOptionPane.ERROR_MESSAGE);
-                        }
-                        break;
-                    default:
-                        String selectedField = field1.getSelectedItem().toString();
-                        try {
-                            actualResult = main.search(selectedField, jtf.getText());
-                            List<String> l = actualResult.get(0);
-                            list.setListData(l.toArray());
-                        } catch (IOException | ParseException ioException) {
-                            ioException.printStackTrace();
-                        }
-                        break;
-                }
+                launchSearch(current);
             }
         }
 
@@ -628,6 +524,82 @@ public class Application extends JFrame {
             currentApplication.contentButton.setBorderPainted(false);
             currentApplication.contentButton.setEnabled(false);
             currentApplication.seeingText = true;
+        }
+    }
+
+    public void launchSearch(JFrame current){
+        switch(numF){
+            case 2:
+                String selected1 = field1.getSelectedItem().toString();
+                String selected2 = field2.getSelectedItem().toString();
+                if(selected1 != selected2){
+                    String[] fields = new String[]{selected1, selected2};
+                    String queries = jtf.getText();
+                    String[] split = queries.split(";");       //NEED TO CLEAN QUERRY
+                    String[] query = new String[2];
+                    if(split.length==1){
+                        query[0] = split[0];
+                        query[1] = split[0];
+                    }else{
+                        query[0] = split[0];
+                        query[1] = split[1];
+                    }
+                    try {
+                        actualResult = main.searchMultipleFields(fields, query);
+                        List<String> l = actualResult.get(0);
+                        list.setListData(l.toArray());
+                    }catch (Exception exception){
+                        exception.printStackTrace();
+                    }
+                }else{
+                    JOptionPane.showMessageDialog(current,
+                          "Please, select different fields.",
+                          "Fields error",
+                          JOptionPane.ERROR_MESSAGE);
+                }
+                break;
+            case 3:
+                selected1 = field1.getSelectedItem().toString();
+                selected2 = field2.getSelectedItem().toString();
+                String selected3 = field3.getSelectedItem().toString();
+                if((!selected1.equals(selected2)) && (!selected2.equals(selected3)) && (!selected1.equals(selected3))){
+                    String[] fields = new String[]{selected1, selected2, selected3};
+                    String queries = jtf.getText();
+                    String[] split = queries.split(";");       //NEED TO CLEAN QUERRY
+                    String[] query = new String[3];
+                    if(split.length==1){
+                        query[0] = split[0];
+                        query[1] = split[0];
+                        query[2] = split[0];
+                    }else{
+                        query[0] = split[0];
+                        query[1] = split[1];
+                        query[2] = split[2];
+                    }
+                    try {
+                        actualResult = main.searchMultipleFields(fields, query);
+                        List<String> l = actualResult.get(0);
+                        list.setListData(l.toArray());
+                    }catch (Exception exception){
+                        exception.printStackTrace();
+                    }
+                }else{
+                    JOptionPane.showMessageDialog(current,
+                          "Please, select different fields.",
+                          "Fields error",
+                          JOptionPane.ERROR_MESSAGE);
+                }
+                break;
+            default:
+                String selectedField = field1.getSelectedItem().toString();
+                try {
+                    actualResult = main.search(selectedField, jtf.getText());
+                    List<String> l = actualResult.get(0);
+                    list.setListData(l.toArray());
+                } catch (IOException | ParseException ioException) {
+                    ioException.printStackTrace();
+                }
+                break;
         }
     }
 
