@@ -533,9 +533,7 @@ public class Application extends JFrame {
 
     public void launchSearch(JFrame current){
         selectedResult = 0;
-        actualResult = new ArrayList<>();
-        actualScore = new ScoreDoc[0];
-        list = new JList();
+        list.setListData(new Object[0]);
         scrollableList.setViewportView(list);
         returnButton.setIcon(null);
         returnButton.setOpaque(false);
