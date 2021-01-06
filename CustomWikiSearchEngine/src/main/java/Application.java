@@ -1,4 +1,5 @@
 import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.search.ScoreDoc;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -42,6 +43,7 @@ public class Application extends JFrame {
     private JCheckBox historyTopic = new JCheckBox("History");
     private JCheckBox religionTopic = new JCheckBox("Religion");
     private JCheckBox sciencesTopic = new JCheckBox("Sciences");
+    private ScoreDoc[] actualScore;
 
     /**
      * Constructor for the application
@@ -546,6 +548,7 @@ public class Application extends JFrame {
                     }
                     try {
                         actualResult = main.searchMultipleFields(fields, query);
+                        actualScore = main.getActualScores();
                         List<String> l = actualResult.get(0);
                         list.setListData(l.toArray());
                     }catch (Exception exception){
@@ -578,6 +581,7 @@ public class Application extends JFrame {
                     }
                     try {
                         actualResult = main.searchMultipleFields(fields, query);
+                        actualScore = main.getActualScores();
                         List<String> l = actualResult.get(0);
                         list.setListData(l.toArray());
                     }catch (Exception exception){
@@ -594,6 +598,7 @@ public class Application extends JFrame {
                 String selectedField = field1.getSelectedItem().toString();
                 try {
                     actualResult = main.search(selectedField, jtf.getText());
+                    actualScore = main.getActualScores();
                     List<String> l = actualResult.get(0);
                     list.setListData(l.toArray());
                 } catch (IOException | ParseException ioException) {

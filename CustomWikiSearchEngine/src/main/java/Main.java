@@ -31,6 +31,8 @@ import static java.nio.file.Files.notExists;
 
 
 public class Main {
+    private ScoreDoc[] actualScores;
+
     /**
      * Constructor of the main class
      */
@@ -155,6 +157,7 @@ public class Main {
 
         TopDocs results = searcher.search(query, max_results);
         ScoreDoc[] hits = results.scoreDocs;
+        actualScores = hits;
         List<List<String>> l = showResults(hits, searcher);
         return l;
 
@@ -179,6 +182,8 @@ public class Main {
 
         TopDocs results = searcher.search(matchQuery, max_results);
         ScoreDoc[] hits = results.scoreDocs;
+
+        actualScores = hits;
 
         return showResults(hits, searcher);
     }
@@ -223,7 +228,9 @@ public class Main {
         return list;
     }
 
-
+    public ScoreDoc[] getActualScores(){
+        return this.actualScores;
+    }
 
     public static void main(String[] args) throws Exception {
         Main main = new Main();
