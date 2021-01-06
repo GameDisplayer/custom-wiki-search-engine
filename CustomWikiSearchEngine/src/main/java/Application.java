@@ -535,7 +535,7 @@ public class Application extends JFrame {
         selectedResult = 0;
         actualResult = new ArrayList<>();
         actualScore = new ScoreDoc[0];
-        list.setListData(new Object[0]);
+        list = new JList();
         scrollableList.setViewportView(list);
         returnButton.setIcon(null);
         returnButton.setOpaque(false);
