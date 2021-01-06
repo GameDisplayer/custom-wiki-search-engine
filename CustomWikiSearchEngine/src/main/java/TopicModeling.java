@@ -8,10 +8,13 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.tartarus.snowball.ext.PorterStemmer;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+
+import edu.stanford.nlp.util.logging.RedwoodConfiguration;
 
 public class TopicModeling {
 
@@ -59,12 +62,15 @@ public class TopicModeling {
         Properties props = new Properties();
         // set the list of annotators to run
         props.setProperty("annotators", "tokenize,ssplit,pos,lemma");
+        //no logs
+        RedwoodConfiguration.current().clear().apply();
         // build pipeline
         StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 
         /* Read the document indexed */
         Directory dir = FSDirectory.open(Paths.get("index_folder"));
         IndexReader reader = DirectoryReader.open(dir);
+
         //for all the document indexed
         for (int i = 0; i < reader.maxDoc(); i++) {
             Document doc = reader.document(i);
@@ -73,6 +79,7 @@ public class TopicModeling {
             int indexh = 0;
             int indexs = 0;
             int indexr = 0;
+
             //for all the topics of a document
             //System.out.println("TOPS OF DOC");
             for (String topic : topics) {
@@ -113,7 +120,7 @@ public class TopicModeling {
             //if no stems have been detected -> rest
             if (indexh + indexs + indexr == 0) {
                 rest++;
-                //for(String topic : topics){ System.out.println(topic);}
+                for(String topic : topics){ System.out.println(topic);}
             }
             else if (indexh + indexs + indexr > 1) {
                 intersection++;
@@ -125,11 +132,15 @@ public class TopicModeling {
         docsPerTopic.add(historyDocList);
         docsPerTopic.add(scienceDocList);
         docsPerTopic.add(religionDocList);
+
+        reader.close();
+        dir.close();
+
         return docsPerTopic;
     }
 
     /**
-     * Method to tokenize and stop word removal the abstract for topic modeling
+     * Method to tokenize and stop word removal the field for topic modeling
      * @param docsPerTopic documents per topic
      * @return HashMap<String, Integer> occurences of words in documents per topic
      */
@@ -144,6 +155,7 @@ public class TopicModeling {
 
             Properties props = new Properties();
             props.setProperty("annotators", "tokenize");
+            RedwoodConfiguration.current().clear().apply();
             StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
             CoreDocument document = pipeline.processToCoreDocument(f);
 
@@ -169,58 +181,66 @@ public class TopicModeling {
 
     /**
      * Function to sort hashmap by values
-     * @param hm HashMap<String, Integer> not yet sorted
+     * @param unSortedMap HashMap<String, Integer> not yet sorted
      * @return HashMap<String, Integer> sorted by Integer (ascending order)
      */
-    private static HashMap<String, Integer> sortByValue(HashMap<String, Integer> hm)
+    private static HashMap<String, Integer> sortByValue(HashMap<String, Integer> unSortedMap)
     {
-        // Create a list from elements of HashMap
-        List<Map.Entry<String, Integer> > list =
-                new LinkedList<>(hm.entrySet());
+        //LinkedHashMap preserve the ordering of elements in which they are inserted
+        LinkedHashMap<String, Integer> reverseSortedMap = new LinkedHashMap<>();
 
-        // Sort the list
-        list.sort(Map.Entry.comparingByValue());
+        //Use Comparator.reverseOrder() for reverse ordering
+        unSortedMap.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .forEachOrdered(x -> reverseSortedMap.put(x.getKey(), x.getValue()));
 
-        // put data from sorted list to hashmap
-        HashMap<String, Integer> temp = new LinkedHashMap<>();
-        for (Map.Entry<String, Integer> aa : list) {
-            temp.put(aa.getKey(), aa.getValue());
-        }
-        return temp;
+        return reverseSortedMap;
     }
 
 
-    public static void displayTopWords(HashMap<String, Integer> hm, int top) {
+    /**
+     * Method to display in log the top occurences words
+     * @param hm hashmap of String, Integer -> word, occurences
+     * @param top number of printed words
+     * @param docs list of docs to calculate idf and tfidf
+     * @throws IOException when opening reader
+     */
+    public static void displayTopWords(HashMap<String, Integer> hm, int top, List<Document> docs) throws IOException {
 
         HashMap<String, Integer> hmOrd = sortByValue(hm);
-        int count = 0;
+        int count = 1;
         for (Map.Entry<String, Integer> en : hmOrd.entrySet()) {
-            int decount = hm.size() - count;
-            if(decount <= top ) System.out.println(decount + " -> Key = " + en.getKey() + ", Occurences = " + en.getValue());
+            if(count <= top ) {
+                double idf = idf(en.getKey(), "abstract", docs);
+                double tfidf = tfidf(idf, en.getValue());
+                System.out.println(count + " -> Key = " + en.getKey() + ", Occurences = " + en.getValue() + ", IDF  = " + idf + ", TFIDF = " + tfidf);
+            }
             count++;
         }
 
     }
+
+
 
     /**
      * Inverse document frequency
      * @param term to calculate
      * @param field to explore
      * @param docsTopic as a subset of the dump
-     * @return idf log(N/n) smoothed (+1)
+     * @return idf log(N/n) smoothed (+1) inverse document frequency smooth
      * @throws IOException when reading docs or stopwords
      */
     public static double idf(String term, String field, List<Document> docsTopic) throws IOException {
         int N = docsTopic.size() + 1;
         int n = 1;
 
-        List<String> stopwords = Files.readAllLines(Paths.get("src/main/resources/english_stopwords.txt"));
-
         for(Document doc : docsTopic) {
             String f = doc.getField(field).toString();
 
             Properties props = new Properties();
             props.setProperty("annotators", "tokenize");
+            RedwoodConfiguration.current().clear().apply();
             StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
             CoreDocument document = pipeline.processToCoreDocument(f);
 
@@ -230,7 +250,6 @@ public class TopicModeling {
 
                 words = tok.word().replaceAll("[^a-zA-Z ]", "").toLowerCase().split("\\s+");
                 for (String word : words) {
-                    //si mot non vide ou stopword ou mots < 2 length
                     if (word.equals(term)) {
                         here = true;
                     }
@@ -238,8 +257,24 @@ public class TopicModeling {
             }
             if(here) n=n+1;
         }
-        System.out.println("Term :" + term + " N : " + N + " n : " + n);
+        //System.out.println("Term :" + term + " N : " + N + " n : " + n);
         return Math.log10(N/n);
+    }
+
+    private static void writeInFileOccurences(String prefixname) {
+        try {
+            File myObj = new File(prefixname + "_occurences.txt");
+            if (myObj.createNewFile()) {
+                System.out.println("File created: " + myObj.getName());
+            } else {
+                System.out.println("File already exists.");
+            }
+
+
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -248,7 +283,7 @@ public class TopicModeling {
      * @param tf calculated
      * @return tfidf value
      */
-    public double tfidf(double idf, double tf) {
+    public static double tfidf(double idf, Integer tf) {
         return tf * idf;
     }
 
@@ -272,15 +307,11 @@ public class TopicModeling {
 
 
         System.out.println("\nTop words of History :");
-        displayTopWords(hmHist, 10);
+        displayTopWords(hmHist, 15, docsHistory);
         System.out.println("\nTop words of Sciences :");
-        displayTopWords(hmScienc, 10);
+        displayTopWords(hmScienc, 15, docsScience);
         System.out.println("\nTop words of Religion&Belief :");
-        displayTopWords(hmRel, 10);
-
-
-        System.out.println(idf("history", "abstract", docsHistory));
-
+        displayTopWords(hmRel, 15, docsReligion);
 
     }
 }
