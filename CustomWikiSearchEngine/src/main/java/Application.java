@@ -593,7 +593,7 @@ public class Application extends JFrame {
                     }else if(split.length==2){
                         query[0] = split[0];
                         query[1] = split[1];
-                        query[2] = split[2];
+                        query[2] = split[1];
                     }else{
                         query[0] = split[0];
                         query[1] = split[1];
