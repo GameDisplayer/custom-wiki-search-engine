@@ -58,7 +58,7 @@ public class Main {
         try {
             if (notExists(Paths.get(indexFolder))) {
                 List<List<String>> documents = this.parseCsv("WikiData.csv");
-                this.createIndex(documents, indexFolder, new StandardAnalyzer());
+                this.createIndex(documents, indexFolder, new WikipediaAnalyzer());
             }
         }catch(Exception e){
             e.printStackTrace();
@@ -68,7 +68,7 @@ public class Main {
         try {
             if (notExists(Paths.get(indexFolderAdvanced))){
                 List<List<String>> documents = this.parseCsv("WikiData.csv");
-                this.createIndex(documents, indexFolderAdvanced, new WikipediaAnalyzer(true));
+                this.createIndex(documents, indexFolderAdvanced, new WikipediaAnalyzerSynonyms(true));
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -77,15 +77,37 @@ public class Main {
 
     /**
      * Class in order to create our analyzer
+     * Close to StandardAnalyzer, just use WikipediaTokenizer instead of StandardTokenizer
      */
     public class WikipediaAnalyzer extends Analyzer{
+
+        @Override
+        protected TokenStreamComponents createComponents(String s) {
+            try {
+                List<String> stopwords = Files.readAllLines(Paths.get("src/main/resources/english_stopwords.txt"));
+                Tokenizer source = new WikipediaTokenizer();
+                TokenStream lower = new LowerCaseFilter(source);
+                TokenStream stopWords = new StopFilter(lower, StopFilter.makeStopSet(stopwords, true));
+
+                return new TokenStreamComponents(source, stopWords);
+            }catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Class in order to create our analyzer for synonyms
+     */
+    public class WikipediaAnalyzerSynonyms extends Analyzer{
         boolean indexing;
 
         /**
          * Constuctor allowing the analyzer to know if is indexing or not
          * @param index true if we are indexing, false otherwise
          */
-        public WikipediaAnalyzer(boolean index){
+        public WikipediaAnalyzerSynonyms(boolean index){
             indexing = index;
         }
 
@@ -215,10 +237,10 @@ public class Main {
         Analyzer analyzer;
         if(synonyms){
             indexFolder = this.indexFolderAdvanced;
-            analyzer = new WikipediaAnalyzer(false);
+            analyzer = new WikipediaAnalyzerSynonyms(false);
         }else{
             indexFolder = this.indexFolder;
-            analyzer = new StandardAnalyzer();
+            analyzer = new WikipediaAnalyzer();
         }
         Directory dir = FSDirectory.open(Paths.get(indexFolder));
         IndexReader reader = DirectoryReader.open(dir);
@@ -249,10 +271,10 @@ public class Main {
         Analyzer analyzer;
         if(synonyms){
             indexFolder = this.indexFolderAdvanced;
-            analyzer = new WikipediaAnalyzer(false);
+            analyzer = new WikipediaAnalyzerSynonyms(false);
         }else{
             indexFolder = this.indexFolder;
-            analyzer = new StandardAnalyzer();
+            analyzer = new WikipediaAnalyzer();
         }
         Directory dir = FSDirectory.open(Paths.get(indexFolder));
         IndexReader reader = DirectoryReader.open(dir);
