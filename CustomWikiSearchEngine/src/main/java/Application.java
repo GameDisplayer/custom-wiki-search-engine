@@ -130,6 +130,12 @@ public class Application extends JFrame {
         list.setFont(police);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addListSelectionListener(new getAbstract(this));
+      /*  list.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+            }
+        });*/
         scrollableList.setPreferredSize(new Dimension(700, 500));
         scrollableList.setMaximumSize(new Dimension(700, 500));
         scrollableList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -146,6 +152,7 @@ public class Application extends JFrame {
         returnButton.setEnabled(false);
         returnButton.setBackground(buttonColor);
         returnButton.setBorder(new LineBorder(Color.BLACK));
+        returnButton.setToolTipText("Back");
         sidesButton.add(returnButton);
         contentButton.setPreferredSize(new Dimension(32,32));
         contentButton.setMaximumSize(new Dimension(32,32));
@@ -158,6 +165,7 @@ public class Application extends JFrame {
         contentButton.setBackground(buttonColor);
         contentButton.setAlignmentY(Component.TOP_ALIGNMENT);
         contentButton.setBorder(new LineBorder(Color.BLACK));
+        contentButton.setToolTipText("See the article content");
         sidesButton.add(contentButton);
         sidesButton.setAlignmentY(Component.TOP_ALIGNMENT);
         med.add(sidesButton);
@@ -172,7 +180,7 @@ public class Application extends JFrame {
         JLabel content = new JLabel("Field :", JLabel.LEFT);
         content.setFont(new Font("Arial", Font.ITALIC, 14));
         field1.setPreferredSize(new Dimension(80, 20));
-        field1.setSelectedIndex(2);
+        field1.setSelectedIndex(1);
         field1.setMaximumSize(new Dimension(80, 20));
         field1.setBackground(backgroundColor);
         content2.setFont(new Font("Arial", Font.ITALIC, 14));
@@ -185,7 +193,7 @@ public class Application extends JFrame {
         content3.setFont(new Font("Arial", Font.ITALIC, 14));
         content3.setVisible(false);
         field3.setPreferredSize(new Dimension(80, 20));
-        field3.setSelectedIndex(1);
+        field3.setSelectedIndex(2);
         field3.setMaximumSize(new Dimension(80, 20));
         field3.setBackground(backgroundColor);
         field3.setVisible(false);
@@ -631,32 +639,73 @@ public class Application extends JFrame {
                 }
                 break;
         }
-        List<Document> finalDocResult = new ArrayList<>();
-        List<Document> rest = new ArrayList<>();
-        for(Document doc : actualResult) {
-            if (historyTopic.isSelected() && isContained(docsHistory, doc)) {
-                finalDocResult.add(doc);
+
+        boolean selHist = historyTopic.isSelected();
+        boolean selScien = sciencesTopic.isSelected();
+        boolean selRel = religionTopic.isSelected();
+        if(selHist || selScien || selRel) {
+
+            List<Document> topRes = new ArrayList<>();
+            List<Document> medRes = new ArrayList<>();
+            List<Document> botRes = new ArrayList<>();
+            List<Document> rest = new ArrayList<>();
+            for (Document doc : actualResult) {
+                boolean histCat = isContained(docsHistory, doc);
+                boolean scienceCat = isContained(docsScience, doc);
+                boolean relCat = isContained(docsReligion, doc);
+
+                if (selHist && selScien && selRel) {
+                    if (histCat && scienceCat && relCat) topRes.add(doc);
+                    else if ((histCat && scienceCat) || (histCat && relCat) || (scienceCat && relCat)) medRes.add(doc);
+                    else if (histCat || scienceCat || relCat) botRes.add(doc);
+                    else rest.add(doc);
+                } else if (selHist && selScien) {
+                    if (histCat && scienceCat) topRes.add(doc);
+                    else if (histCat || scienceCat) medRes.add(doc);
+                    else rest.add(doc);
+                } else if (selHist && selRel) {
+                    if (histCat && relCat) topRes.add(doc);
+                    else if (histCat || relCat) medRes.add(doc);
+                    else rest.add(doc);
+                } else if (selScien && selRel) {
+                    if (scienceCat && relCat) topRes.add(doc);
+                    else if (scienceCat || relCat) medRes.add(doc);
+                    else rest.add(doc);
+                } else if (selHist) {
+                    if (histCat) topRes.add(doc);
+                    else rest.add(doc);
+                } else if (selScien) {
+                    if (scienceCat) topRes.add(doc);
+                    else rest.add(doc);
+                } else {
+                    if (relCat) topRes.add(doc);
+                    else rest.add(doc);
+                }
             }
-            else if(sciencesTopic.isSelected() && isContained(docsScience, doc)) {
-                finalDocResult.add(doc);
+            topRes.addAll(medRes);
+            topRes.addAll(botRes);
+            topRes.addAll(rest);
+
+            ScoreDoc[] newScore = new ScoreDoc[actualScore.length];
+            int c=0;
+            for(Document doc : topRes) {
+                int index = actualResult.indexOf(doc);
+                newScore[c] = actualScore[index];
+                c++;
             }
-            else if (religionTopic.isSelected() && isContained(docsReligion, doc)){
-                finalDocResult.add(doc);
-            }
-            else
-            {
-                rest.add(doc);
-            }
+            //refresh vars
+            actualScore = newScore;
+            actualResult = topRes;
         }
-        finalDocResult.addAll(rest);
-        actualResult = finalDocResult;
+        int c=0;
         for(Document doc : actualResult){
             String tops=" [ ";
             if(isContained(docsScience, doc))  tops += "science ";
             if(isContained(docsHistory, doc)) tops += "history ";
             if(isContained(docsReligion, doc))  tops += "religion ";
             tops+= "]";
-            l.add(doc.get("title") + tops);
+            l.add(doc.get("title") + tops + " -> " + actualScore[c].score);
+            c++;
         }
         list.setListData(l.toArray());
 
