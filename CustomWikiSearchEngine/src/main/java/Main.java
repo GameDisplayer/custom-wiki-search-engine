@@ -42,6 +42,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.nio.file.Files.notExists;
+import static java.nio.file.Files.setOwner;
 
 
 public class Main {
@@ -209,7 +210,7 @@ public class Main {
      */
     public List<Document> search(String field, String searchFor, boolean synonyms) throws IOException, ParseException {
         int max_results = 100;
-        System.out.println("Searching for " + searchFor + " at " + field);
+        //System.out.println("Searching for " + searchFor + " at " + field);
         String indexFolder;
         Analyzer analyzer;
         if(synonyms){
@@ -289,7 +290,6 @@ public class Main {
      */
     private List<Document> showResults(ScoreDoc[] hits, IndexSearcher searcher) throws IOException {
         List<Document> list = new ArrayList<>();
-        System.out.println(hits);
         for (ScoreDoc scoreDoc : hits) {
             //System.out.println("doc="+scoreDoc.doc+" score="+scoreDoc.score);
             Document doc = searcher.doc(scoreDoc.doc);

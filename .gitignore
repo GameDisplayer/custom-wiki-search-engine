@@ -30,3 +30,4 @@ CustomWikiSearchEngine/*.iml
 
 CustomWikiSearchEngine/target/
 CustomWikiSearchEngine/index_folder/
+CustomWikiSearchEngine/index_folder_advanced/
