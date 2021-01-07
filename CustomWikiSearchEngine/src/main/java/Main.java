@@ -1,6 +1,13 @@
 import com.opencsv.CSVReader;
-import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.*;
+import org.apache.lucene.analysis.core.FlattenGraphFilter;
+import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
+import org.apache.lucene.analysis.synonym.SynonymMap;
+import org.apache.lucene.analysis.synonym.SynonymMap.Builder;
+import org.apache.lucene.analysis.synonym.WordnetSynonymParser;
+import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -19,9 +26,16 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Attribute;
+import org.apache.lucene.util.AttributeFactory;
+import org.apache.lucene.util.AttributeImpl;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,21 +46,70 @@ import static java.nio.file.Files.notExists;
 
 public class Main {
     private ScoreDoc[] actualScores;
+    private final String indexFolder = "index_folder";
+    private final String indexFolderAdvanced = "index_folder_advanced";
 
     /**
      * Constructor of the main class
      */
     public Main(){
-        //Indexation of documents
+        //Indexation of documents for basic search
         try {
-            if (notExists(Paths.get("index_folder"))) {
+            if (notExists(Paths.get(indexFolder))) {
                 List<List<String>> documents = this.parseCsv("WikiData.csv");
-                this.createIndex(documents);
+                this.createIndex(documents, indexFolder, new StandardAnalyzer());
             }
         }catch(Exception e){
             e.printStackTrace();
         }
-        //MAYBE ADD TOPIC MODELLING ALSO HERE?
+
+        //Indexation of documents for advanced search
+        try {
+            if (notExists(Paths.get(indexFolderAdvanced))){
+                List<List<String>> documents = this.parseCsv("WikiData.csv");
+                this.createIndex(documents, indexFolderAdvanced, new WikipediaAnalyzer(true));
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Class in order to create our analyzer
+     */
+    public class WikipediaAnalyzer extends Analyzer{
+        boolean indexing;
+
+        /**
+         * Constuctor allowing the analyzer to know if is indexing or not
+         * @param index true if we are indexing, false otherwise
+         */
+        public WikipediaAnalyzer(boolean index){
+            indexing = index;
+        }
+
+        @Override
+        protected TokenStreamComponents createComponents(String s) {
+            try {
+                List<String> stopwords = Files.readAllLines(Paths.get("src/main/resources/english_stopwords.txt"));
+                Tokenizer source = new WikipediaTokenizer();
+                WordnetSynonymParser wordNetparser = new WordnetSynonymParser(true, true, new StandardAnalyzer(CharArraySet.EMPTY_SET));
+                wordNetparser.parse(new FileReader("src/main/resources/wordnet_prolog/wn_s.pl"));
+                SynonymMap synonymMap = wordNetparser.build();
+                TokenStream synonymFilter = new SynonymGraphFilter(source, synonymMap, false);
+                TokenStream stopWords;
+                if(indexing) {
+                    TokenStream flat = new FlattenGraphFilter(synonymFilter);
+                    stopWords = new StopFilter(flat, StopFilter.makeStopSet(stopwords,true));
+                }else{
+                    stopWords = new StopFilter(synonymFilter, StopFilter.makeStopSet(stopwords,true));
+                }
+                return new TokenStreamComponents(source, stopWords);
+            } catch (IOException | java.text.ParseException ioException) {
+                ioException.printStackTrace();
+            }
+            return null;
+        }
     }
 
     /**
@@ -75,12 +138,13 @@ public class Main {
     /**
      * Create Lucene Index of the wiki documents extracted
      * @param data all the data extracted from the csv file
+     * @param indexFolderName the name of the index folder
+     * @param analyzer the analyzer used
      * @throws Exception indexWriter
      */
-    private void createIndex(List<List<String>> data) throws Exception {
+    private void createIndex(List<List<String>> data, String indexFolderName, Analyzer analyzer) throws Exception {
 
-        Directory dir = FSDirectory.open(Paths.get("index_folder"));
-        Analyzer analyzer = new StandardAnalyzer();
+        Directory dir = FSDirectory.open(Paths.get(indexFolderName));
         IndexWriterConfig iwc = new IndexWriterConfig(analyzer);
 
         iwc.setOpenMode(OpenMode.CREATE); 			// Create a NEW index in the directory
@@ -110,7 +174,7 @@ public class Main {
             documentsAdded++;
         }
 
-        System.out.println("documents added: " + documentsAdded);
+        //System.out.println("documents added: " + documentsAdded);
     }
 
 
@@ -130,27 +194,34 @@ public class Main {
             //Lucene documents support the addition of multiple fields of the same name
             if(topic != null && topic.length() > 0) lucene_doc.add(new StringField("topics", topic, Field.Store.YES));
         }
-        //maybe the link of the article ?
 
         return lucene_doc;
-
     }
 
     /**
      * Basic search method
      * @param field the field in which we want to search
      * @param searchFor the query
+     * @param synonyms true if we want synonyms, false otherwise
      * @return List<String> : the answer to the querry
      * @throws IOException when opening indexreader
      * @throws ParseException for results
      */
-    public List<Document> search(String field, String searchFor) throws IOException, ParseException {
+    public List<Document> search(String field, String searchFor, boolean synonyms) throws IOException, ParseException {
         int max_results = 100;
         System.out.println("Searching for " + searchFor + " at " + field);
-        Directory dir = FSDirectory.open(Paths.get("index_folder"));
+        String indexFolder;
+        Analyzer analyzer;
+        if(synonyms){
+            indexFolder = this.indexFolderAdvanced;
+            analyzer = new WikipediaAnalyzer(false);
+        }else{
+            indexFolder = this.indexFolder;
+            analyzer = new StandardAnalyzer();
+        }
+        Directory dir = FSDirectory.open(Paths.get(indexFolder));
         IndexReader reader = DirectoryReader.open(dir);
         IndexSearcher searcher = new IndexSearcher(reader);
-        Analyzer analyzer = new StandardAnalyzer();
 
         QueryParser parser = new QueryParser(field, analyzer);
         Query query = parser.parse(searchFor);
@@ -166,16 +237,25 @@ public class Main {
      * Basic search in multiple fields
      * @param fields the list of field in which we want to search
      * @param searchFor the list of querry (one by fields)
+     * @param synonyms true if we want synonyms, false otherwise
      * @return List<String> the answer of the querry
      * @throws IOException when opening IndexReader
      * @throws ParseException when parsing for response
      */
-    public List<Document> searchMultipleFields(String[] fields, String[] searchFor) throws IOException, ParseException {
-        int max_results = 2;
-        Directory dir = FSDirectory.open(Paths.get("index_folder" ));
+    public List<Document> searchMultipleFields(String[] fields, String[] searchFor, boolean synonyms) throws IOException, ParseException {
+        int max_results = 100;
+        String indexFolder;
+        Analyzer analyzer;
+        if(synonyms){
+            indexFolder = this.indexFolderAdvanced;
+            analyzer = new WikipediaAnalyzer(false);
+        }else{
+            indexFolder = this.indexFolder;
+            analyzer = new StandardAnalyzer();
+        }
+        Directory dir = FSDirectory.open(Paths.get(indexFolder));
         IndexReader reader = DirectoryReader.open(dir);
         IndexSearcher searcher = new IndexSearcher(reader);
-        Analyzer analyzer = new StandardAnalyzer();
 
         Query matchQuery = MultiFieldQueryParser.parse(searchFor, fields, analyzer);
 
@@ -209,43 +289,22 @@ public class Main {
      */
     private List<Document> showResults(ScoreDoc[] hits, IndexSearcher searcher) throws IOException {
         List<Document> list = new ArrayList<>();
+        System.out.println(hits);
         for (ScoreDoc scoreDoc : hits) {
-            System.out.println("doc="+scoreDoc.doc+" score="+scoreDoc.score);
+            //System.out.println("doc="+scoreDoc.doc+" score="+scoreDoc.score);
             Document doc = searcher.doc(scoreDoc.doc);
-            System.out.println("\t" + doc.get("title"));
+            //System.out.println("\t" + doc.get("title"));
             list.add(doc);
         }
         return list;
     }
 
+    /**
+     * Getter for the parameter actualScores
+     * @return actualScores
+     */
     public ScoreDoc[] getActualScores(){
         return this.actualScores;
-    }
-
-    public static void main(String[] args) throws Exception {
-        Main main = new Main();
-
-
-        /* We parse the cvs file and we create indexes */
-        if(notExists(Paths.get("index_folder"))) {
-            List<List<String>> documents = main.parseCsv("WikiData.csv");
-            main.createIndex(documents);
-        }
-
-        /* Test stemmming
-        PorterStemmer stem = new PorterStemmer();
-        stem.setCurrent("historically");
-        stem.stem();
-        String result = stem.getCurrent();
-        System.out.println(result);
-         */
-
-        /* Test search
-        String field="content";
-        String searchFor="history";
-        main.search(field, searchFor);
-         */
-
     }
 
 }
