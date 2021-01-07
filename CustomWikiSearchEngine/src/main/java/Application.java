@@ -59,6 +59,8 @@ public class Application extends JFrame {
     private JCheckBox sciencesTopic = new JCheckBox("Sciences");
     private ScoreDoc[] actualScore;
 
+    private JCheckBox synonyms = new JCheckBox("Synonyms", false);
+
     List<Document> docsHistory, docsScience, docsReligion;
 
     /**
@@ -123,6 +125,10 @@ public class Application extends JFrame {
         JPanel choosable = new JPanel();
         choosable.setLayout(new BoxLayout(choosable, BoxLayout.Y_AXIS));
         choosable.setBackground(backgroundColor);
+        //Panel for the synonyms
+        JPanel synon = new JPanel();
+        synon.setLayout(new BoxLayout(synon, BoxLayout.LINE_AXIS));
+        synon.setBackground(backgroundColor);
         //Panel with all the filters (need to align all)
         JPanel filters = new JPanel(new BorderLayout());
         filters.setBackground(backgroundColor);
@@ -229,6 +235,7 @@ public class Application extends JFrame {
         numFields.setBackground(backgroundColor);
         helpButton.setPreferredSize(new Dimension(20,20));
         helpButton.addActionListener(new PopUpInformation(this));
+        helpButton.setToolTipText("Help for the multiple fields search");
         helpButton.setBackground(buttonColor);
         helpButton.setBorder(new LineBorder(Color.BLACK));
 
@@ -263,12 +270,21 @@ public class Application extends JFrame {
         topics.add(Box.createHorizontalStrut(5));
         topics.add(sciencesTopic);
 
+        //Allow search by synonyms
+        JLabel txt = new JLabel("Allow :");
+        txt.setFont(new Font("Arial", Font.ITALIC, 14));
+        synonyms.setBackground(backgroundColor);
+        synon.add(txt);
+        synon.add(Box.createHorizontalStrut(5));
+        synon.add(synonyms);
+
         //All the filters :
         multFields.setAlignmentX(Component.LEFT_ALIGNMENT);
         topics.setAlignmentX(Component.LEFT_ALIGNMENT);
         choosable.add(multFields);
         choosable.add(topics);
         filters.add(choosable, BorderLayout.WEST);
+        filters.add(synon, BorderLayout.EAST);
 
         //General layout :
         container.add(top, BorderLayout.NORTH);
@@ -284,7 +300,7 @@ public class Application extends JFrame {
     /**
      * Listener for "Go" button
      */
-    class ButtonListener implements ActionListener {
+    public class ButtonListener implements ActionListener {
         JFrame current;
 
         /**
@@ -307,7 +323,7 @@ public class Application extends JFrame {
     /**
      * Listener for the search bar
      */
-    class JtextFileEnterListener implements KeyListener {
+    public class JtextFileEnterListener implements KeyListener {
         private final JFrame current;
 
         /**
@@ -590,6 +606,12 @@ public class Application extends JFrame {
         contentButton.setEnabled(false);
 
         List<String> l = new ArrayList<>();
+        boolean synonymsChecked;
+        if(synonyms.isSelected()){
+            synonymsChecked = true;
+        }else{
+            synonymsChecked = false;
+        }
         switch(numF){
             case 2:
                 String selected1 = field1.getSelectedItem().toString();
@@ -607,7 +629,7 @@ public class Application extends JFrame {
                         query[1] = split[1];
                     }
                     try {
-                        actualResult = main.searchMultipleFields(fields, query);
+                        actualResult = main.searchMultipleFields(fields, query, synonymsChecked);
                         actualScore = main.getActualScores();
                     }catch (Exception exception){
                         exception.printStackTrace();
@@ -642,7 +664,7 @@ public class Application extends JFrame {
                         query[2] = split[2];
                     }
                     try {
-                        actualResult = main.searchMultipleFields(fields, query);
+                        actualResult = main.searchMultipleFields(fields, query, synonymsChecked);
                         actualScore = main.getActualScores();
                     }catch (Exception exception){
                         exception.printStackTrace();
@@ -657,82 +679,94 @@ public class Application extends JFrame {
             default:
                 String selectedField = field1.getSelectedItem().toString();
                 try {
-                    actualResult = main.search(selectedField, jtf.getText());
+                    actualResult = main.search(selectedField, jtf.getText(), synonymsChecked);
                     actualScore = main.getActualScores();
                 } catch (IOException | ParseException ioException) {
                     ioException.printStackTrace();
                 }
                 break;
         }
+        if(!actualResult.isEmpty()) {
 
-        boolean selHist = historyTopic.isSelected();
-        boolean selScien = sciencesTopic.isSelected();
-        boolean selRel = religionTopic.isSelected();
-        if(selHist || selScien || selRel) {
+            boolean selHist = historyTopic.isSelected();
+            boolean selScien = sciencesTopic.isSelected();
+            boolean selRel = religionTopic.isSelected();
+            if (selHist || selScien || selRel) {
 
-            List<Document> topRes = new ArrayList<>();
-            List<Document> medRes = new ArrayList<>();
-            List<Document> botRes = new ArrayList<>();
-            List<Document> rest = new ArrayList<>();
-            for (Document doc : actualResult) {
-                boolean histCat = isContained(docsHistory, doc);
-                boolean scienceCat = isContained(docsScience, doc);
-                boolean relCat = isContained(docsReligion, doc);
+                List<Document> topRes = new ArrayList<>();
+                List<Document> medRes = new ArrayList<>();
+                List<Document> botRes = new ArrayList<>();
+                List<Document> rest = new ArrayList<>();
+                for (Document doc : actualResult) {
+                    boolean histCat = isContained(docsHistory, doc);
+                    boolean scienceCat = isContained(docsScience, doc);
+                    boolean relCat = isContained(docsReligion, doc);
 
-                if (selHist && selScien && selRel) {
-                    if (histCat && scienceCat && relCat) topRes.add(doc);
-                    else if ((histCat && scienceCat) || (histCat && relCat) || (scienceCat && relCat)) medRes.add(doc);
-                    else if (histCat || scienceCat || relCat) botRes.add(doc);
-                    else rest.add(doc);
-                } else if (selHist && selScien) {
-                    if (histCat && scienceCat) topRes.add(doc);
-                    else if (histCat || scienceCat) medRes.add(doc);
-                    else rest.add(doc);
-                } else if (selHist && selRel) {
-                    if (histCat && relCat) topRes.add(doc);
-                    else if (histCat || relCat) medRes.add(doc);
-                    else rest.add(doc);
-                } else if (selScien && selRel) {
-                    if (scienceCat && relCat) topRes.add(doc);
-                    else if (scienceCat || relCat) medRes.add(doc);
-                    else rest.add(doc);
-                } else if (selHist) {
-                    if (histCat) topRes.add(doc);
-                    else rest.add(doc);
-                } else if (selScien) {
-                    if (scienceCat) topRes.add(doc);
-                    else rest.add(doc);
-                } else {
-                    if (relCat) topRes.add(doc);
-                    else rest.add(doc);
+                    if (selHist && selScien && selRel) {
+                        if (histCat && scienceCat && relCat) topRes.add(doc);
+                        else if ((histCat && scienceCat) || (histCat && relCat) || (scienceCat && relCat))
+                            medRes.add(doc);
+                        else if (histCat || scienceCat || relCat) botRes.add(doc);
+                        else rest.add(doc);
+                    } else if (selHist && selScien) {
+                        if (histCat && scienceCat) topRes.add(doc);
+                        else if (histCat || scienceCat) medRes.add(doc);
+                        else rest.add(doc);
+                    } else if (selHist && selRel) {
+                        if (histCat && relCat) topRes.add(doc);
+                        else if (histCat || relCat) medRes.add(doc);
+                        else rest.add(doc);
+                    } else if (selScien && selRel) {
+                        if (scienceCat && relCat) topRes.add(doc);
+                        else if (scienceCat || relCat) medRes.add(doc);
+                        else rest.add(doc);
+                    } else if (selHist) {
+                        if (histCat) topRes.add(doc);
+                        else rest.add(doc);
+                    } else if (selScien) {
+                        if (scienceCat) topRes.add(doc);
+                        else rest.add(doc);
+                    } else {
+                        if (relCat) topRes.add(doc);
+                        else rest.add(doc);
+                    }
                 }
-            }
-            topRes.addAll(medRes);
-            topRes.addAll(botRes);
-            topRes.addAll(rest);
+                topRes.addAll(medRes);
+                topRes.addAll(botRes);
+                topRes.addAll(rest);
 
-            ScoreDoc[] newScore = new ScoreDoc[actualScore.length];
-            int c=0;
-            for(Document doc : topRes) {
-                int index = actualResult.indexOf(doc);
-                newScore[c] = actualScore[index];
+                ScoreDoc[] newScore = new ScoreDoc[actualScore.length];
+                int c = 0;
+                for (Document doc : topRes) {
+                    int index = actualResult.indexOf(doc);
+                    newScore[c] = actualScore[index];
+                    c++;
+                }
+                //refresh vars
+                actualScore = newScore;
+                actualResult = topRes;
+            }
+            int c = 0;
+            for (Document doc : actualResult) {
+                String tops = " [ ";
+                if (isContained(docsScience, doc)) tops += "science ";
+                if (isContained(docsHistory, doc)) tops += "history ";
+                if (isContained(docsReligion, doc)) tops += "religion ";
+                tops += "]";
+                l.add(doc.get("title") + tops + " -> " + actualScore[c].score);
                 c++;
             }
-            //refresh vars
-            actualScore = newScore;
-            actualResult = topRes;
+            list.setListData(l.toArray());
+        }else{
+            JTextArea noResult = new JTextArea();
+            noResult.setText("There is no result for this query. Please, try again");
+            noResult.setEditable(false);
+            noResult.setFont(new Font("Arial", Font.ITALIC, 18));
+            noResult.setForeground(Color.RED);
+            noResult.setLineWrap(true);
+            noResult.setWrapStyleWord(true);
+            scrollableList.setViewportView(noResult);
         }
-        int c=0;
-        for(Document doc : actualResult){
-            String tops=" [ ";
-            if(isContained(docsScience, doc))  tops += "science ";
-            if(isContained(docsHistory, doc)) tops += "history ";
-            if(isContained(docsReligion, doc))  tops += "religion ";
-            tops+= "]";
-            l.add(doc.get("title") + tops + " -> " + actualScore[c].score);
-            c++;
-        }
-        list.setListData(l.toArray());
 
     }
 
