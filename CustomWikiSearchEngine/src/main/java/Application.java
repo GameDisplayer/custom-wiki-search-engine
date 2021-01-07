@@ -18,18 +18,6 @@ import java.util.List;
  */
 public class Application extends JFrame {
 
-    /* Top menu */
-    private JMenuBar menuBar = new JMenuBar();
-    private JMenu menu = new JMenu("File");
-    private JMenu menu2 = new JMenu("Statistics");
-
-    private JMenuItem item1 = new JMenuItem("Export");
-    private JMenuItem item2 = new JMenuItem("Close");
-
-    private JMenuItem item3 = new JMenuItem("General");
-    private JMenuItem item4 = new JMenuItem("Topics");
-
-
     private final Main main = new Main();
     private final JTextField jtf = new JTextField("Search the Wiki world");
     private final JCheckBox numFields = new JCheckBox("Multiple field", false);
@@ -80,22 +68,6 @@ public class Application extends JFrame {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
 
-        //initialize menu
-        this.menu.add(item1);
-        this.menu.addSeparator();
-        item2.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
-        this.menu.add(item2);
-        this.menu2.add(item3);
-        this.menu2.add(item4);
-
-        this.menuBar.add(menu);
-        this.menuBar.add(menu2);
-        this.setJMenuBar(menuBar);
 
         JPanel container = new JPanel();
         container.setBackground(backgroundColor);
@@ -161,6 +133,7 @@ public class Application extends JFrame {
         jb.setPreferredSize(new Dimension(55,30));
         jb.setBorder(new LineBorder(Color.BLACK));
         jb.addActionListener(new ButtonListener(this));
+        jb.setToolTipText("Search for it");
         top.add(jb);
 
         //Result part :
@@ -183,7 +156,6 @@ public class Application extends JFrame {
         returnButton.setEnabled(false);
         returnButton.setBackground(buttonColor);
         returnButton.setBorder(new LineBorder(Color.BLACK));
-        returnButton.setToolTipText("Back");
         sidesButton.add(returnButton);
         contentButton.setPreferredSize(new Dimension(32,32));
         contentButton.setMaximumSize(new Dimension(32,32));
@@ -196,7 +168,6 @@ public class Application extends JFrame {
         contentButton.setBackground(buttonColor);
         contentButton.setAlignmentY(Component.TOP_ALIGNMENT);
         contentButton.setBorder(new LineBorder(Color.BLACK));
-        contentButton.setToolTipText("See the article content");
         sidesButton.add(contentButton);
         sidesButton.setAlignmentY(Component.TOP_ALIGNMENT);
         med.add(sidesButton);
@@ -692,69 +663,10 @@ public class Application extends JFrame {
             boolean selScien = sciencesTopic.isSelected();
             boolean selRel = religionTopic.isSelected();
             if (selHist || selScien || selRel) {
-
-                List<Document> topRes = new ArrayList<>();
-                List<Document> medRes = new ArrayList<>();
-                List<Document> botRes = new ArrayList<>();
-                List<Document> rest = new ArrayList<>();
-                for (Document doc : actualResult) {
-                    boolean histCat = isContained(docsHistory, doc);
-                    boolean scienceCat = isContained(docsScience, doc);
-                    boolean relCat = isContained(docsReligion, doc);
-
-                    if (selHist && selScien && selRel) {
-                        if (histCat && scienceCat && relCat) topRes.add(doc);
-                        else if ((histCat && scienceCat) || (histCat && relCat) || (scienceCat && relCat))
-                            medRes.add(doc);
-                        else if (histCat || scienceCat || relCat) botRes.add(doc);
-                        else rest.add(doc);
-                    } else if (selHist && selScien) {
-                        if (histCat && scienceCat) topRes.add(doc);
-                        else if (histCat || scienceCat) medRes.add(doc);
-                        else rest.add(doc);
-                    } else if (selHist && selRel) {
-                        if (histCat && relCat) topRes.add(doc);
-                        else if (histCat || relCat) medRes.add(doc);
-                        else rest.add(doc);
-                    } else if (selScien && selRel) {
-                        if (scienceCat && relCat) topRes.add(doc);
-                        else if (scienceCat || relCat) medRes.add(doc);
-                        else rest.add(doc);
-                    } else if (selHist) {
-                        if (histCat) topRes.add(doc);
-                        else rest.add(doc);
-                    } else if (selScien) {
-                        if (scienceCat) topRes.add(doc);
-                        else rest.add(doc);
-                    } else {
-                        if (relCat) topRes.add(doc);
-                        else rest.add(doc);
-                    }
-                }
-                topRes.addAll(medRes);
-                topRes.addAll(botRes);
-                topRes.addAll(rest);
-
-                ScoreDoc[] newScore = new ScoreDoc[actualScore.length];
-                int c = 0;
-                for (Document doc : topRes) {
-                    int index = actualResult.indexOf(doc);
-                    newScore[c] = actualScore[index];
-                    c++;
-                }
-                //refresh vars
-                actualScore = newScore;
-                actualResult = topRes;
+                actualiseResultsFromTopicsSelection(selHist, selScien, selRel);
             }
-            int c = 0;
             for (Document doc : actualResult) {
-                String tops = " [ ";
-                if (isContained(docsScience, doc)) tops += "science ";
-                if (isContained(docsHistory, doc)) tops += "history ";
-                if (isContained(docsReligion, doc)) tops += "religion ";
-                tops += "]";
-                l.add(doc.get("title") + tops + " -> " + actualScore[c].score);
-                c++;
+                l.add(doc.get("title"));
             }
             list.setListData(l.toArray());
         }else{
@@ -768,6 +680,67 @@ public class Application extends JFrame {
             scrollableList.setViewportView(noResult);
         }
 
+    }
+
+    /**
+     * Method to re actualise the results from the query based on the selection of the topics by the user (advanced searches)
+     * @param selHist boolean history topic checkbox is checked
+     * @param selScien boolean science topic checkbox is checked
+     * @param selRel boolean religion topic checkbox is checked
+     */
+    private void actualiseResultsFromTopicsSelection(boolean selHist, boolean selScien, boolean selRel) {
+        List<Document> topRes = new ArrayList<>();
+        List<Document> medRes = new ArrayList<>();
+        List<Document> botRes = new ArrayList<>();
+        List<Document> rest = new ArrayList<>();
+        for (Document doc : actualResult) {
+            boolean histCat = isContained(docsHistory, doc);
+            boolean scienceCat = isContained(docsScience, doc);
+            boolean relCat = isContained(docsReligion, doc);
+
+            if (selHist && selScien && selRel) {
+                if (histCat && scienceCat && relCat) topRes.add(doc);
+                else if ((histCat && scienceCat) || (histCat && relCat) || (scienceCat && relCat))
+                    medRes.add(doc);
+                else if (histCat || scienceCat || relCat) botRes.add(doc);
+                else rest.add(doc);
+            } else if (selHist && selScien) {
+                if (histCat && scienceCat) topRes.add(doc);
+                else if (histCat || scienceCat) medRes.add(doc);
+                else rest.add(doc);
+            } else if (selHist && selRel) {
+                if (histCat && relCat) topRes.add(doc);
+                else if (histCat || relCat) medRes.add(doc);
+                else rest.add(doc);
+            } else if (selScien && selRel) {
+                if (scienceCat && relCat) topRes.add(doc);
+                else if (scienceCat || relCat) medRes.add(doc);
+                else rest.add(doc);
+            } else if (selHist) {
+                if (histCat) topRes.add(doc);
+                else rest.add(doc);
+            } else if (selScien) {
+                if (scienceCat) topRes.add(doc);
+                else rest.add(doc);
+            } else {
+                if (relCat) topRes.add(doc);
+                else rest.add(doc);
+            }
+        }
+        topRes.addAll(medRes);
+        topRes.addAll(botRes);
+        topRes.addAll(rest);
+
+        ScoreDoc[] newScore = new ScoreDoc[actualScore.length];
+        int c = 0;
+        for (Document doc : topRes) {
+            int index = actualResult.indexOf(doc);
+            newScore[c] = actualScore[index];
+            c++;
+        }
+        //refresh vars
+        actualScore = newScore;
+        actualResult = topRes;
     }
 
     /**
