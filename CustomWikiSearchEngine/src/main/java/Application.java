@@ -17,6 +17,19 @@ import java.util.List;
  * Class used to create an user interface
  */
 public class Application extends JFrame {
+
+    /* Top menu */
+    private JMenuBar menuBar = new JMenuBar();
+    private JMenu menu = new JMenu("File");
+    private JMenu menu2 = new JMenu("Statistics");
+
+    private JMenuItem item1 = new JMenuItem("Export");
+    private JMenuItem item2 = new JMenuItem("Close");
+
+    private JMenuItem item3 = new JMenuItem("General");
+    private JMenuItem item4 = new JMenuItem("Topics");
+
+
     private final Main main = new Main();
     private final JTextField jtf = new JTextField("Search the Wiki world");
     private final JCheckBox numFields = new JCheckBox("Multiple field", false);
@@ -64,6 +77,24 @@ public class Application extends JFrame {
         this.setResizable(false);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
+
+        //initialize menu
+        this.menu.add(item1);
+        this.menu.addSeparator();
+        item2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.exit(0);
+            }
+        });
+        this.menu.add(item2);
+        this.menu2.add(item3);
+        this.menu2.add(item4);
+
+        this.menuBar.add(menu);
+        this.menuBar.add(menu2);
+        this.setJMenuBar(menuBar);
+
         JPanel container = new JPanel();
         container.setBackground(backgroundColor);
         container.setBorder(new EmptyBorder(0,10,10,10));
@@ -130,12 +161,6 @@ public class Application extends JFrame {
         list.setFont(police);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addListSelectionListener(new getAbstract(this));
-      /*  list.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-            }
-        });*/
         scrollableList.setPreferredSize(new Dimension(700, 500));
         scrollableList.setMaximumSize(new Dimension(700, 500));
         scrollableList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
