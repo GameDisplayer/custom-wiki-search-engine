@@ -10,10 +10,8 @@ biological:228
 earth:228
 protein:226
 gene:223
-first:193
 use:189
 system:188
-two:187
 proteins:186
 based:180
 many:179
@@ -46,7 +44,6 @@ physical:124
 often:123
 high:123
 within:123
-rowspan:122
 organisms:121
 species:121
 sciences:121

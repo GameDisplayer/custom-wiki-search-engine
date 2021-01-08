@@ -17,7 +17,6 @@ many:59
 jesus:58
 life:58
 faith:56
-first:54
 human:53
 social:52
 term:51
@@ -77,7 +76,6 @@ different:29
 well:29
 called:28
 developed:28
-two:27
 catholic:27
 others:27
 worship:26

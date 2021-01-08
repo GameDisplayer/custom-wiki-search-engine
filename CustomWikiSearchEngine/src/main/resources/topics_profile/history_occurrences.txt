@@ -5,12 +5,11 @@ social:219
 book:209
 historical:208
 century:189
-first:174
 new:158
 religion:148
-states:147
+ancient:145
 society:144
-ancient:141
+states:140
 people:139
 modern:137
 war:136
@@ -62,7 +61,6 @@ development:72
 years:72
 revolution:71
 public:71
-two:70
 government:70
 according:69
 developed:69

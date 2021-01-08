@@ -434,30 +434,28 @@ public class TopicModeling {
         displayTopWords(field, hmRel, 15, docsReligion);
 
 
-        /* Create topic_occurrences.txt
+        /* Create topic_occurrences.txt */
         writeInFileOccurrences("history", sortByValue(hmHist));
-        writeInFileOccurrences("science", sortByValue(hmScienc));
+        writeInFileOccurrences("sciences", sortByValue(hmScienc));
         writeInFileOccurrences("religion", sortByValue(hmRel));
 
-         */
+
 
 
         HashMap<String, Double> histIDFs= sortByValueD(topicProfileIDF(field, sortByValue(hmHist), docsHistory), false);
         HashMap<String, Double> scienceIDFs= sortByValueD(topicProfileIDF(field, sortByValue(hmScienc), docsScience), false);
         HashMap<String, Double> religionIDFs = sortByValueD(topicProfileIDF(field, sortByValue(hmRel), docsReligion), false);
 
-        /* Create topic_idfs.txt
+        /* Create topic_idfs.txt */
         writeInFileTF_IDFS("history", "idfs", histIDFs);
-        writeInFileTF_IDFS("science", "idfs", scienceIDFs);
+        writeInFileTF_IDFS("sciences", "idfs", scienceIDFs);
         writeInFileTF_IDFS("religion", "idfs",religionIDFs);
-
-         */
 
 
 
         /* topic_tfidfs.txt */
         writeInFileTF_IDFS("history", "tfidfs", sortByValueD(topicProfileTFIDF(histIDFs, hmHist), true));
-        writeInFileTF_IDFS("science", "tfidfs", sortByValueD(topicProfileTFIDF(scienceIDFs, hmScienc), true));
+        writeInFileTF_IDFS("sciences", "tfidfs", sortByValueD(topicProfileTFIDF(scienceIDFs, hmScienc), true));
         writeInFileTF_IDFS("religion", "tfidfs", sortByValueD(topicProfileTFIDF(religionIDFs, hmRel), true));
 
     }
