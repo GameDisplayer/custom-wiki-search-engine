@@ -1,11 +1,9 @@
 import com.opencsv.CSVReader;
 import org.apache.lucene.analysis.*;
 import org.apache.lucene.analysis.core.FlattenGraphFilter;
-import org.apache.lucene.analysis.standard.ClassicAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.synonym.SynonymGraphFilter;
 import org.apache.lucene.analysis.synonym.SynonymMap;
-import org.apache.lucene.analysis.synonym.SynonymMap.Builder;
 import org.apache.lucene.analysis.synonym.WordnetSynonymParser;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
 import org.apache.lucene.document.Document;
@@ -26,15 +24,9 @@ import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Attribute;
-import org.apache.lucene.util.AttributeFactory;
-import org.apache.lucene.util.AttributeImpl;
 
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -42,8 +34,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.nio.file.Files.notExists;
-import static java.nio.file.Files.setOwner;
-
 
 public class Main {
     private ScoreDoc[] actualScores;

@@ -35,8 +35,14 @@ public class Application extends JFrame {
     JButton returnButton = new JButton(returnIcon);
     ImageIcon contentIcon = createImageIcon("Icon/content.png", "content");
     JButton contentButton = new JButton(contentIcon);
+    ImageIcon seeIcon = createImageIcon("Icon/able_view.png", "see scores");
+    ImageIcon dontSeeIcon = createImageIcon("Icon/disable_view.png", "don't see scores");
+    JButton scoresButton = new JButton(seeIcon);
     JList list = new JList();
-    JScrollPane scrollableList = new JScrollPane(list);
+    JList scores = new JList();
+    JList categories = new JList();
+    JPanel scrol = new JPanel(new GridBagLayout());
+    JScrollPane scrollableList = new JScrollPane();
     private List<Document> actualResult = new ArrayList<>();
     private int selectedResult = 0;
     boolean seeingText = false;
@@ -46,6 +52,7 @@ public class Application extends JFrame {
     private JCheckBox religionTopic = new JCheckBox("Religion");
     private JCheckBox sciencesTopic = new JCheckBox("Sciences");
     private ScoreDoc[] actualScore;
+    private boolean scoreAndCat = false;
 
     private JCheckBox synonyms = new JCheckBox("Synonyms", false);
 
@@ -140,12 +147,53 @@ public class Application extends JFrame {
         list.setFont(police);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addListSelectionListener(new getAbstract(this));
+        scores.setFont(new Font("Arial", Font.ITALIC, 14));
+        scores.setForeground(Color.GRAY);
+        categories.setFont(new Font("Arial", Font.ITALIC, 14));
+        categories.setForeground(Color.GRAY);
         scrollableList.setPreferredSize(new Dimension(700, 500));
         scrollableList.setMaximumSize(new Dimension(700, 500));
         scrollableList.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         scrollableList.setAlignmentY(Component.TOP_ALIGNMENT);
         scrollableList.setAlignmentX(Component.CENTER_ALIGNMENT);
         scrollableList.setBorder(new LineBorder(Color.BLACK));
+        scrol.setBackground(Color.WHITE);
+        GridBagConstraints c1 = new GridBagConstraints();
+        c1.gridx = 0;
+        c1.gridy = 0;
+        c1.fill = GridBagConstraints.BOTH;
+        c1.anchor = GridBagConstraints.FIRST_LINE_START;
+        c1.weightx = 0.5;
+        c1.weighty = 0.5;
+        scrol.add(list, c1);
+        GridBagConstraints c2 = new GridBagConstraints();
+        c2.gridx = 1;
+        c2.gridy = 0;
+        c2.fill = GridBagConstraints.BOTH;
+        c2.anchor = GridBagConstraints.PAGE_START;
+        c2.weightx = 0.5;
+        c2.weighty = 0.5;
+        c2.insets = new Insets(0, 3, 0, 3);
+        scores.setVisible(false);
+        scrol.add(scores, c2);
+        GridBagConstraints c3 = new GridBagConstraints();
+        c3.gridx = 2;
+        c3.gridy = 0;
+        c3.fill = GridBagConstraints.BOTH;
+        c3.anchor = GridBagConstraints.FIRST_LINE_END;
+        c3.weightx = 0.5;
+        c3.weighty = 0.5;
+        categories.setVisible(false);
+        scrol.add(categories, c3);
+        scrollableList.setViewportView(scrol);
+
+        scoresButton.setPreferredSize(new Dimension(32,25));
+        scoresButton.setMaximumSize(new Dimension(32,25));
+        scoresButton.setBackground(buttonColor);
+        scoresButton.setBorder(new LineBorder(Color.BLACK));
+        scoresButton.setToolTipText("See scores and categories");
+        scoresButton.addActionListener(new ScoresListener());
+        sidesButton.add(scoresButton);
         returnButton.setPreferredSize(new Dimension(32,20));
         returnButton.setMaximumSize(new Dimension(32,20));
         returnButton.addActionListener(new returnListener(this));
@@ -500,7 +548,7 @@ public class Application extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             if(!currentApplication.seeingText) {
-                currentApplication.scrollableList.setViewportView(currentApplication.list);
+                scrollableList.setViewportView(scrol);
                 returnButton.setIcon(null);
                 returnButton.setOpaque(false);
                 returnButton.setContentAreaFilled(false);
@@ -561,10 +609,37 @@ public class Application extends JFrame {
         }
     }
 
+    /**
+     * Class for the Listener of the score button
+     */
+    public class ScoresListener implements ActionListener{
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if(scoreAndCat){
+                scores.setVisible(false);
+                categories.setVisible(false);
+                scoresButton.setToolTipText("See scores and categories");
+                scoresButton.setIcon(seeIcon);
+                scoreAndCat = false;
+            }else{
+                scores.setVisible(true);
+                categories.setVisible(true);
+                scoresButton.setToolTipText("Don't see scores and categories");
+                scoresButton.setIcon(dontSeeIcon);
+                scoreAndCat = true;
+            }
+        }
+    }
+
+    /**
+     * Method to lauch the search
+     * @param current the actual Frame
+     */
     public void launchSearch(JFrame current){
         selectedResult = 0;
         list.setListData(new Object[0]);
-        scrollableList.setViewportView(list);
+        scrollableList.setViewportView(scrol);
         returnButton.setIcon(null);
         returnButton.setOpaque(false);
         returnButton.setContentAreaFilled(false);
@@ -669,6 +744,8 @@ public class Application extends JFrame {
                 l.add(doc.get("title"));
             }
             list.setListData(l.toArray());
+            scores.setListData(getJustScore(actualScore));
+            categories.setListData(getAllTopics(actualResult));
         }else{
             JTextArea noResult = new JTextArea();
             noResult.setText("There is no result for this query. Please, try again");
@@ -744,19 +821,45 @@ public class Application extends JFrame {
     }
 
     /**
-     * Get topics for each document of a list of documents
-     * @param docs list of documents
+     * Method in order to allow the display of the scores
+     * @param scores the actual scores
+     * @return just the scores
+     */
+    public Float[] getJustScore(ScoreDoc[] scores){
+        Float[] res = new Float[scores.length];
+        for(int i = 0; i<scores.length; i++){
+            res[i] = scores[i].score;
+        }
+        return res;
+    }
+
+    /**
+     * Get topics for a document
+     * @param doc a document
      * @return StringBuilder of [ *topic1* ... *topic3* ]
      */
-    private String getTopics(List<Document> docs) {
+    private String getTopics(Document doc) {
         StringBuilder topicList = new StringBuilder("[ ");
-        for(Document doc : docs) {
-            if(isContained(docsHistory, doc)) topicList.append("history ");
-            if(isContained(docsScience, doc)) topicList.append("sciences ");
-            if(isContained(docsReligion, doc)) topicList.append("religion ");
-        }
+
+        if(isContained(docsHistory, doc)) topicList.append("history ");
+        if(isContained(docsScience, doc)) topicList.append("sciences ");
+        if(isContained(docsReligion, doc)) topicList.append("religion ");
+
         topicList.append("]");
         return topicList.toString();
+    }
+
+    /**
+     * Get topics for each document of a list of documents
+     * @param docs a list of documents
+     * @return String[]
+     */
+    private String[] getAllTopics(List<Document> docs){
+        String[] res = new String[docs.size()];
+        for(int i = 0; i < docs.size(); i++){
+            res[i] = getTopics(docs.get(i));
+        }
+        return res;
     }
 
     /**
