@@ -9,8 +9,14 @@ import java.nio.file.Paths;
 import static org.apache.lucene.index.MultiTerms.getTerms;
 
 public class Statistics {
-    
 
+
+    /**
+     * Method for providing basic information of a specific term in a field on the entire corpus indexed
+     * @param termText term/word
+     * @param field title, abstract, content or topics
+     * @throws IOException indexreader
+     */
     public static void basicInfo(String termText, String field) throws IOException {
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get("index_folder")));
 
@@ -23,6 +29,11 @@ public class Statistics {
         reader.close();
     }
 
+    /**
+     * method to iterate through the vocabulary of a field on the entire corpus (without stop words removal!)
+     * @param field of the indexed documents
+     * @throws IOException indexreader
+     */
     public static void iterateThroughVocab(String field) throws IOException {
 
         IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get("index_folder")));
@@ -57,6 +68,12 @@ public class Statistics {
     }
 
 
+    /**
+     * Method to have some more advanced information on a term in a field on the entire corpus
+     * @param term word
+     * @param field of documents
+     * @throws IOException indexreader
+     */
     public static void corpusLevelStatistics(String term, String field) throws IOException {
 
         IndexReader index = DirectoryReader.open(FSDirectory.open(Paths.get("index_folder")));
@@ -78,6 +95,12 @@ public class Statistics {
     }
 
 
+    /**
+     * Method to get average informations of the specified field on the corpus
+     * @param field of documents
+     * @return average double value
+     * @throws IOException indexreader
+     */
     public static double average(String field) throws IOException{
         IndexReader index = DirectoryReader.open(FSDirectory.open(Paths.get("index_folder")));
 
@@ -106,14 +129,14 @@ public class Statistics {
 
     public static void main(String[] args) throws IOException {
 
-//        basicInfo("history", "content");
-//
-//        corpusLevelStatistics("history", "abstract");
-//        corpusLevelStatistics("religion", "abstract");
-//        corpusLevelStatistics("science", "abstract");
-//
-//        iterateThroughVocab("abstract");
+        /* some tests of functions */
+        basicInfo("history", "content");
 
+        corpusLevelStatistics("history", "abstract");
+        corpusLevelStatistics("religion", "abstract");
+        corpusLevelStatistics("science", "abstract");
+
+        iterateThroughVocab("abstract");
 
         System.out.println("Average length of titles = " + average("title"));
         System.out.println("Average length of abstracts = " + average("abstract"));
