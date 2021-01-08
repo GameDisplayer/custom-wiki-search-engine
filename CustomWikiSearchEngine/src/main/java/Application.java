@@ -744,6 +744,22 @@ public class Application extends JFrame {
     }
 
     /**
+     * Get topics for each document of a list of documents
+     * @param docs list of documents
+     * @return StringBuilder of [ *topic1* ... *topic3* ]
+     */
+    private String getTopics(List<Document> docs) {
+        StringBuilder topicList = new StringBuilder("[ ");
+        for(Document doc : docs) {
+            if(isContained(docsHistory, doc)) topicList.append("history ");
+            if(isContained(docsScience, doc)) topicList.append("sciences ");
+            if(isContained(docsReligion, doc)) topicList.append("religion ");
+        }
+        topicList.append("]");
+        return topicList.toString();
+    }
+
+    /**
      * Tell if a document belongs to a set of document
      * @param list of documents
      * @param doc unit
