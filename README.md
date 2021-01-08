@@ -50,4 +50,4 @@ It is possible to run the TopicModeling and the Statistics files as standalone d
 - [Lucene](https://lucene.apache.org/core/) - for the search engine part (indexing, tokenization, search...)
 - [Stanford CoreNLP](https://stanfordnlp.github.io/CoreNLP/) - for the topic profile part/analysis of the documents 
 - [OpenCSV](http://opencsv.sourceforge.net/) - for the parsing part of the WikiData CSV file in order to index the documents
-- [WikiDumpReader](https://pypi.org/project/wiki-dump-reader/) - the parser for transforming WikiData XML into WikiData CSV
+- [WikiDumpReader](https://pypi.org/project/wiki-dump-reader/) - the parser for transforming WikiData XML into WikiData CSV - Need Python 3
